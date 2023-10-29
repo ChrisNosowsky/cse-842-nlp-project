@@ -6,23 +6,23 @@
 #
 # ==============================================================================
 from data_reader import *
-# TODO: MAIN, START HERE.
+from model import *
+from evaluate import *
 
 if __name__ == '__main__':
-    # TODO: pip install libs -- pandas, numpy, sklearn, etc.?
-    # TODO: Open Path to data dir
-    dr = DataReader()
-    dr.open_dataset()
+    # Step 1: Data Reader
+    dr = DataReader(Features.BOW)
+    dr.open_dataset(debug=True)
     dr.build_vocab()
-    # TODO: Transform into pandas dataframe/numpy arrays
-    # TODO: build vocab corpus and convert feature set to BoW
-    # TODO: Return train/test
+    dr.build_feature_set()
 
-    # TODO: Create model
-    # TODO: Train and test
+    # Step 2: Model(s)
+    KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
+    model = KerasModel.learn()
 
+    # Step 3: Evaluate
+    evaluate = Evaluate(model, dr.x_test, dr.y_test)
+    preds = evaluate.predict()
+    evaluate.evaluate(preds)
     # TODO: Evaluate model using accuracy, f1, recall, precision -- report findings for both train/test
     # TODO: Do writeup
-
-
-    pass

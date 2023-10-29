@@ -1,13 +1,15 @@
 # ==============================================================================
 # CSE 842
-# Constants used in assignment
+# Project: Article Text Categorization
 #
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
+import constants
+from enum import Enum
 
-BOW = 0
-NGRAMS = 1
-TFIDF = 2
-CLASS_TO_LABEL_MAPPING = {}
-NLTK_CORPUS = ["punkt", "stopwords"]
+
+class Features(Enum):
+    BOW = constants.BOW
+    NGRAMS = constants.NGRAMS
+    TFIDF = constants.TFIDF
