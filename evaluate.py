@@ -49,3 +49,9 @@ class Evaluate:
     def plot_results(self):
         # TODO: TBD Later stage of project
         pass
+
+    def evaluate2(self, predictions):
+        self.accuracy = accuracy_score(self.y_test, predictions)
+        self.precision = precision_score(self.y_test, predictions, average=None)
+        self.recall = recall_score(self.y_test, predictions, average=None)
+        self.f1 = f1_score(self.y_test, predictions, average=None)

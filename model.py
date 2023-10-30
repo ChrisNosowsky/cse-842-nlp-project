@@ -51,22 +51,28 @@ class KerasFCNNModel:
         # TODO: TBD Later stage of project
         pass
 
-
 class NaiveBayesModel:
-    # TODO: TBD Later stage of project
     def __init__(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
 
     def learn(self):
-        pass
+        print('Training Naive Bayes model...')
+        model = MultinomialNB()
+        model.fit(self.x_train, self.y_train)
+        print('Naive Bayes model trained')
 
+        return model
 
 class RIPPERModel:
-    # TODO: TBD Later stage of project. Will use n-grams
     def __init__(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
 
     def learn(self):
-        pass
+        print('Training Ripple model...')
+        model = lw.RIPPER()
+        model.fit(self.x_train, self.y_train, class_feat='Poisonous/Edible', pos_class='p')
+        print('Ripple model trained')
+
+        return model
