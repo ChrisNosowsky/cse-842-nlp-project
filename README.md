@@ -19,4 +19,15 @@ You can also run it in an IDE of your choosing.
 
 
 ## Results
+
+### Keras FCNN Model
+Test accuracy of model: 0.687
+Test precision of model: 0.5066565115995754
+Test recall of model: 0.687
+Test f1 score of model: 0.5779432081113259
+
+### RIPPER Model
+TBD
+
+### Naive Bayes Model
 TBD

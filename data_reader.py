@@ -10,7 +10,6 @@ import string
 import numpy as np
 import pandas as pd
 import nltk
-import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from constants import *
@@ -20,6 +19,8 @@ from features import *
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
 # TODO: Remove numerics?
 # TODO: Add stemmers?
+# TODO: Add top x vocab words only to reduce model runtime?
+# TODO: Add support for second dataset
 ################################################
 
 

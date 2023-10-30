@@ -24,5 +24,4 @@ if __name__ == '__main__':
     evaluate = Evaluate(model, dr.x_test, dr.y_test)
     preds = evaluate.predict()
     evaluate.evaluate(preds)
-    # TODO: Evaluate model using accuracy, f1, recall, precision -- report findings for both train/test
     # TODO: Do writeup

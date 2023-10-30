@@ -22,6 +22,7 @@ class KerasFCNNModel:
     def __init__(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
+        self.history = None
 
     def learn(self):
         in_shape = self.x_train.shape[1]
@@ -42,7 +43,13 @@ class KerasFCNNModel:
         print('Keras FCNN Training Loss: ' + str(train_loss))
         return model
 
+    def plot_train_accuracy(self):
+        # TODO: TBD Later stage of project
+        pass
 
+    def plot_loss_accuracy(self):
+        # TODO: TBD Later stage of project
+        pass
 
 
 class NaiveBayesModel:
@@ -63,9 +70,3 @@ class RIPPERModel:
 
     def learn(self):
         pass
-
-
-
-
-
-
