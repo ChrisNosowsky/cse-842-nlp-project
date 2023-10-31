@@ -14,19 +14,19 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from constants import *
 from features import *
+from collections import Counter
 
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
 # TODO: Remove numerics?
 # TODO: Add stemmers?
-# TODO: Add top x vocab words only to reduce model runtime?
 # TODO: Add support for second dataset
 ################################################
 
 
 class DataReader:
 
-    def __init__(self, feature=BOW):
+    def __init__(self, feature=BOW, top_vocab_words=False):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -36,6 +36,7 @@ class DataReader:
         self.y_test = None
         self.classes = None
         self.class_mapping = None
+        self.top_vocab_words = top_vocab_words
         self.feature = feature
         self.nltk_download_check()
 
@@ -132,12 +133,17 @@ class DataReader:
 
     def build_vocab(self):
         text = []
-        for i, words in enumerate(self.data_train[:, 0]):
-            text += self.data_train[i][0].split(' ') + self.data_train[i][0].split(' ')
-        text = set(text)
-        vectorizer = CountVectorizer()
-        vectorizer.fit_transform(text)
-        self.vocab = vectorizer.get_feature_names_out()
+        for row, words in enumerate(self.data_train[:, 0]):
+            text += self.data_train[row][0].split(' ') + self.data_train[row][0].split(' ')
+        if self.top_vocab_words:    # Limit vocab
+            word_counts = Counter(text)
+            most_common_words = [word for word, _ in word_counts.most_common(TOP_VOCAB_WORDS)]
+            self.vocab = np.array(most_common_words)
+        else:                       # No limit vocab
+            text = set(text)
+            vectorizer = CountVectorizer()
+            vectorizer.fit_transform(text)
+            self.vocab = vectorizer.get_feature_names_out()
 
     def build_feature_set(self):
         if self.feature == Features.BOW:

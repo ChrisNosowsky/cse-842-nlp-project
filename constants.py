@@ -11,3 +11,4 @@ NGRAMS = 1
 TFIDF = 2
 CLASS_TO_LABEL_MAPPING = {}
 NLTK_CORPUS = ["punkt", "stopwords"]
+TOP_VOCAB_WORDS = 15000

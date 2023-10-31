@@ -6,7 +6,7 @@
 #
 # ==============================================================================
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 
 class Evaluate:
@@ -30,28 +30,12 @@ class Evaluate:
         return self.model.predict(self.x_test)
 
     def evaluate(self, predictions):
-        # Compute the number of correct predictions
-        correct_predictions = np.sum(predictions.argmax(axis=1) == self.y_test)
-
-        # Calculate accuracy
-        accuracy = correct_predictions / len(self.y_test)
-
-        # Calculate precision, recall, and F1 score
-        precision = precision_score(self.y_test, predictions.argmax(axis=1), average='weighted')
-        recall = recall_score(self.y_test, predictions.argmax(axis=1), average='weighted')
-        f1 = f1_score(self.y_test, predictions.argmax(axis=1), average='weighted')
-
-        print("Test accuracy of model: " + str(accuracy))
-        print("Test precision of model: " + str(precision))
-        print("Test recall of model: " + str(recall))
-        print("Test f1 score of model: " + str(f1))
+        self.accuracy = accuracy_score(self.y_test, predictions)
+        self.precision = precision_score(self.y_test, predictions, average=None)
+        self.recall = recall_score(self.y_test, predictions, average=None)
+        self.f1 = f1_score(self.y_test, predictions, average=None)
 
     def plot_results(self):
         # TODO: TBD Later stage of project
         pass
 
-    def evaluate2(self, predictions):
-        self.accuracy = accuracy_score(self.y_test, predictions)
-        self.precision = precision_score(self.y_test, predictions, average=None)
-        self.recall = recall_score(self.y_test, predictions, average=None)
-        self.f1 = f1_score(self.y_test, predictions, average=None)
