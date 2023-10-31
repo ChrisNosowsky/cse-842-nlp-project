@@ -17,11 +17,11 @@ if __name__ == '__main__':
     dr.build_feature_set()
 
     # Step 2: Model(s)
-    modelNames = ['kerasFcnnModel', 'naiveBayesModel', 'rippleModel']
+    modelNames = ['naiveBayesModel',  'rippleModel']
 
     # KerasModel
-    KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
-    kerasFcnnModel = KerasModel.learn()
+    #KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
+    #kerasFcnnModel = KerasModel.learn()
 
     # NaiveBayesModel
     NaiveBayesModel = NaiveBayesModel(dr.x_train, dr.y_train)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # Step 3: Evaluate
     modelIndex = 0
-    for model in [kerasFcnnModel, naiveBayesModel, rippleModel]:
+    for model in [naiveBayesModel, rippleModel]:
         evaluate = Evaluate(model, dr.x_test, dr.y_test)
         if modelNames[modelIndex] == 'kerasFcnnModel':
             preds = np.argmax(evaluate.predict(), axis=1)
