@@ -10,6 +10,7 @@ import tensorflow as tf
 import wittgenstein as lw
 from sklearn.naive_bayes import MultinomialNB
 from tensorflow import keras
+from datasets import *
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -21,10 +22,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 class KerasFCNNModel:
-    def __init__(self, x_train, y_train):
+    def __init__(self, x_train, y_train, dataset=Datasets.BOTH):
         self.x_train = x_train
         self.y_train = y_train
         self.history = None
+        self.dataset = dataset
 
     def learn(self):
         in_shape = self.x_train.shape[1]
@@ -32,7 +34,14 @@ class KerasFCNNModel:
         model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
         model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
         model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu))
-        model.add(tf.keras.layers.Dense(20, activation=tf.nn.softmax))
+        num_classes = 0
+        if self.dataset == Datasets.NEWS_20:
+            num_classes = 20
+        elif self.dataset == Datasets.NEWS_AG:
+            num_classes = 4
+        else:
+            num_classes = 24
+        model.add(tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax))
         # learning_rate=0.001
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])

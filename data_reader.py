@@ -10,10 +10,11 @@ import string
 import numpy as np
 import pandas as pd
 import nltk
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 from constants import *
 from features import *
+from datasets import *
 from collections import Counter
 
 ################################################
@@ -86,17 +87,54 @@ class DataReader:
         self.data_test = np.array(pd.read_csv('data/20newsgroup/20_news_pre_processed_test.csv'))[:, 1:]
         self.data_train = np.array(pd.read_csv('data/20newsgroup/20_news_pre_processed_train.csv'))[:, 1:]
 
-    def open_dataset(self, debug=False):
+    def open_dataset(self, dataset=BOTH, debug=False):
+        # dataset:
+        #   NEWS_20   - 20newsgroup
+        #   NEWS_AG   - ag news
+        #   BOTH - combine both datasets
+
         if debug:
             top_rows = 1000
         else:
             top_rows = None
 
-        self.data_test = np.array(pd.read_csv('data/20newsgroup/20_news_test.csv', nrows=top_rows))[:, 1:]
-        self.data_train = np.array(pd.read_csv('data/20newsgroup/20_news_train.csv', nrows=top_rows))[:, 1:]
+        # 20newsgroup
+        if dataset == NEWS_20 or dataset == BOTH:
+            data_test_20 = np.array(pd.read_csv('data/20newsgroup/20_news_test.csv', nrows=top_rows))[:, 1:]
+            data_train_20 = np.array(pd.read_csv('data/20newsgroup/20_news_train.csv', nrows=top_rows))[:, 1:]
+            print("pre-processing 20newsgroup dataset")
+            data_test_20[:, 0] = self.preprocess(data_test_20)
+            data_train_20[:, 0] = self.preprocess(data_train_20)
+            print("done pre-processing")
+            if dataset == '20':
+                self.data_test = data_test_20
+                self.data_train = data_train_20
 
-        self.data_test[:, 0] = self.preprocess(self.data_test)
-        self.data_train[:, 0] = self.preprocess(self.data_train)
+        # ag news
+        if dataset == NEWS_AG or dataset == BOTH:
+            data_test_ag = pd.read_csv('data/ag_news/test.csv')
+            data_train_ag = pd.read_csv('data/ag_news/train.csv')
+            data_test_ag.drop(['title'], axis=1)
+            data_train_ag.drop(['title'], axis=1)
+            data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'class']))
+            data_train_ag = np.array(data_train_ag.reindex(columns=['text', 'class']))
+            random_indices = np.random.choice(data_train_ag.shape[0], size=12000, replace=False)
+            data_train_ag = data_train_ag[random_indices]
+            for i in range(data_test_ag.shape[0]): data_test_ag[i][1] = str(data_test_ag[i][1])
+            for i in range(data_train_ag.shape[0]): data_train_ag[i][1] = str(data_train_ag[i][1])
+            print('pre-processing ag news dataset')
+            data_test_ag[:, 0] = self.preprocess(data_test_ag)
+            data_train_ag[:, 0] = self.preprocess(data_train_ag)
+            print('done pre-processing')
+            if dataset == 'ag':
+                self.data_test = data_test_ag
+                self.data_train = data_train_ag
+
+        # combine datasets
+        if dataset == BOTH:
+            self.data_test = np.concatenate((data_test_20, data_test_ag), axis=0)
+            self.data_train = np.concatenate((data_train_20, data_train_ag), axis=0)
+
         self.classes = set(list(self.data_test[:, 1]))
 
         np.random.shuffle(self.data_test)
@@ -151,10 +189,10 @@ class DataReader:
             self.x_train, self.x_test = self.generate_bow_feature()
         if self.feature == Features.NGRAMS:
             print("Creating NGRAMS Feature")
-            # TODO TBD Later stage of project
+            self.x_train, self.x_test = self.generate_ngrams_feature()
         if self.feature == Features.TFIDF:
             print("Creating TFIDF Feature")
-            # TODO TBD Later stage of project
+            self.x_train, self.x_test = self.generate_tfidf_feature()
 
     def generate_bow_feature(self):
         bow_vectorizer = CountVectorizer(vocabulary=self.vocab)
@@ -162,4 +200,14 @@ class DataReader:
         x_test = bow_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()
 
+    def generate_ngrams_feature(self, n=2):
+        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n,n))
+        x_train = ngrams_vectorizer.fit_transform(self.x_train)
+        x_test = ngrams_vectorizer.fit_transform(self.x_test)
+        return x_train.toarray(), x_test.toarray()
 
+    def generate_tfidf_feature(self, max_feat=1000):
+        tfidf_vectorizer = TfidfVectorizer(max_features=max_feat)
+        x_train = tfidf_vectorizer.fit_transform(self.x_train)
+        x_test = tfidf_vectorizer.fit_transform(self.x_test)
+        return x_train.toarray(), x_test.toarray()

@@ -1,17 +1,16 @@
 # ==============================================================================
 # CSE 842
-# Constants used in assignment
+# Project: Article Text Categorization
 #
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
+import constants
+from enum import Enum
 
-BOW = 0
-NGRAMS = 1
-TFIDF = 2
-NEWS_20 = 3
-NEWS_AG = 4
-BOTH = 5
-CLASS_TO_LABEL_MAPPING = {}
-NLTK_CORPUS = ["punkt", "stopwords"]
-TOP_VOCAB_WORDS = 15000
+
+class Datasets(Enum):
+    NEWS_20 = constants.NEWS_20
+    NEWS_AG = constants.NEWS_AG
+    BOTH = constants.BOTH
+

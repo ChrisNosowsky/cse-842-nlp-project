@@ -10,9 +10,11 @@ from model import *
 from evaluate import *
 
 if __name__ == '__main__':
+    # set the dataset to either: datasets.NEWS_20 = 20newsgroup, datasets.NEWS_AG = ag news, datasets.BOTH = combine both datasets
+    dataset = Datasets.BOTH
     # Step 1: Data Reader
     dr = DataReader(Features.BOW, top_vocab_words=True)
-    dr.open_dataset(debug=False)
+    dr.open_dataset(dataset=dataset, debug=False)
     dr.build_vocab()
     dr.build_feature_set()
 
