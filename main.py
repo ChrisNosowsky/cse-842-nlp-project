@@ -9,6 +9,9 @@ from data_reader import *
 from model import *
 from evaluate import *
 
+
+# TODO: Tensorflow-GPU?
+
 if __name__ == '__main__':
     # set the dataset to either: NEWS_20 = 20newsgroup, NEWS_AG = ag news, BOTH = combine both datasets
     dataset = NEWS_20

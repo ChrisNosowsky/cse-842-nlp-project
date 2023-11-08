@@ -16,8 +16,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 ################################################
 # MODELING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Tweak model parameters
-# TODO: Use XGBoost?
+# TODO: Tweak model parameters -- All team
+# TODO: Add XGBoost tuning parameters -- Yue
+# TODO: LM? (BERT pretrained models, maybe two? -- One for Yue TODO, One for Chris TODO
 ################################################
 
 
@@ -74,6 +75,7 @@ class NaiveBayesModel:
         print('Naive Bayes model trained')
 
         return model
+
 
 class RIPPERModel:
     def __init__(self, x_train, y_train):

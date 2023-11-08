@@ -19,9 +19,10 @@ from collections import Counter
 
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Remove numerics?
-# TODO: Add stemmers?
-# TODO: Add support for second dataset
+# TODO: Remove numerics? -- Josh
+# TODO: Add stemmers? -- Chris
+# TODO: Further preprocessing -- Josh
+# TODO: Word2Vec -- Josh or Chris
 ################################################
 
 
