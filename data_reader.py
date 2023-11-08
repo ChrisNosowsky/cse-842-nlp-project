@@ -106,7 +106,7 @@ class DataReader:
             data_test_20[:, 0] = self.preprocess(data_test_20)
             data_train_20[:, 0] = self.preprocess(data_train_20)
             print("done pre-processing")
-            if dataset == '20':
+            if dataset == NEWS_20:
                 self.data_test = data_test_20
                 self.data_train = data_train_20
 
@@ -126,7 +126,7 @@ class DataReader:
             data_test_ag[:, 0] = self.preprocess(data_test_ag)
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
             print('done pre-processing')
-            if dataset == 'ag':
+            if dataset == NEWS_AG:
                 self.data_test = data_test_ag
                 self.data_train = data_train_ag
 
@@ -206,7 +206,7 @@ class DataReader:
         x_test = ngrams_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()
 
-    def generate_tfidf_feature(self, max_feat=1000):
+    def generate_tfidf_feature(self, max_feat=10000):
         tfidf_vectorizer = TfidfVectorizer(max_features=max_feat)
         x_train = tfidf_vectorizer.fit_transform(self.x_train)
         x_test = tfidf_vectorizer.fit_transform(self.x_test)

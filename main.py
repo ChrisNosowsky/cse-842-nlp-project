@@ -10,32 +10,32 @@ from model import *
 from evaluate import *
 
 if __name__ == '__main__':
-    # set the dataset to either: datasets.NEWS_20 = 20newsgroup, datasets.NEWS_AG = ag news, datasets.BOTH = combine both datasets
-    dataset = Datasets.BOTH
+    # set the dataset to either: NEWS_20 = 20newsgroup, NEWS_AG = ag news, BOTH = combine both datasets
+    dataset = NEWS_20
     # Step 1: Data Reader
-    dr = DataReader(Features.BOW, top_vocab_words=True)
+    dr = DataReader(Features.TFIDF, top_vocab_words=True)
     dr.open_dataset(dataset=dataset, debug=False)
     dr.build_vocab()
     dr.build_feature_set()
 
     # Step 2: Model(s)
-    modelNames = ['naiveBayesModel',  'rippleModel']
+    modelNames = ['kerasFcnnModel']
 
     # KerasModel
-    #KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
-    #kerasFcnnModel = KerasModel.learn()
+    KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
+    kerasFcnnModel = KerasModel.learn()
 
     # NaiveBayesModel
-    NaiveBayesModel = NaiveBayesModel(dr.x_train, dr.y_train)
-    naiveBayesModel = NaiveBayesModel.learn()
+    # NaiveBayesModel = NaiveBayesModel(dr.x_train, dr.y_train)
+    # naiveBayesModel = NaiveBayesModel.learn()
 
     # RippleModel
-    RippleModel = RIPPERModel(dr.x_train, dr.y_train)
-    rippleModel = RippleModel.learn()
+    # RippleModel = RIPPERModel(dr.x_train, dr.y_train)
+    # rippleModel = RippleModel.learn()
 
     # Step 3: Evaluate
     modelIndex = 0
-    for model in [naiveBayesModel, rippleModel]:
+    for model in [kerasFcnnModel]:
         evaluate = Evaluate(model, dr.x_test, dr.y_test)
         if modelNames[modelIndex] == 'kerasFcnnModel':
             preds = np.argmax(evaluate.predict(), axis=1)
