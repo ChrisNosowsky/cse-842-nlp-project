@@ -42,6 +42,8 @@ class DataReader:
         self.feature = feature
         self.nltk_download_check()
 
+        self.original_x_test = None
+
     @staticmethod
     def nltk_download_check():
         installed_corpora = os.listdir(nltk.data.find("corpora"))
@@ -148,6 +150,7 @@ class DataReader:
         self.y_train = label_encoder.fit_transform(y_train_words)
 
         self.x_test = self.data_test[:, 0]
+        self.original_x_test = self.data_test[:, 0]
         y_test_words = self.data_test[:, 1]
         self.y_test = label_encoder.fit_transform(y_test_words)
 
@@ -168,6 +171,7 @@ class DataReader:
             text = ' '.join(filtered_tokens)
             processed_data.append(text)
         processed_data = np.array(processed_data)
+
         return processed_data
 
     def build_vocab(self):
