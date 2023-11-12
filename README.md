@@ -54,3 +54,8 @@ The f1 score of naiveBayesModelwas:  [0.76506024 0.65753425 0.00502513 0.6182572
  0.82471627 0.87317073 0.91414752 0.92964824 0.95849057 0.8956743
  0.74015748 0.85637584 0.87657431 0.89162562 0.81862745 0.90832158
  0.65232975 0.60393873]
+
+
+## Disclosures
+Pre-trained GoogleNews vector for word embeddings downloaded from here:
+https://github.com/mmihaltz/word2vec-GoogleNews-vectors

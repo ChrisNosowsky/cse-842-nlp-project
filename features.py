@@ -13,3 +13,4 @@ class Features(Enum):
     BOW = constants.BOW
     NGRAMS = constants.NGRAMS
     TFIDF = constants.TFIDF
+    DOC2VEC = constants.DOC2VEC
