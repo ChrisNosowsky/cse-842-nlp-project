@@ -43,6 +43,7 @@ class DataReader:
         self.nltk_download_check()
 
         self.original_x_test = None
+        self.original_x_train = None
 
     @staticmethod
     def nltk_download_check():
@@ -146,6 +147,7 @@ class DataReader:
         label_encoder = LabelEncoder()
 
         self.x_train = self.data_train[:, 0]
+        self.original_x_train = self.data_train[:, 0]
         y_train_words = self.data_train[:, 1]
         self.y_train = label_encoder.fit_transform(y_train_words)
 

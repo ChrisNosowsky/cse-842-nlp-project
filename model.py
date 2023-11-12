@@ -117,7 +117,7 @@ class BERTModel:
         val_size = len(dataset) - train_size
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-        batch_size = 3
+        batch_size = 2
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
@@ -138,7 +138,6 @@ class BERTModel:
             average_loss = total_loss / len(train_loader)
             print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {average_loss:.4f}")
 
-        model.save_pretrained("bert_trained")
         print('BERT model trained')
 
         return model

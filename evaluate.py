@@ -35,7 +35,7 @@ class Evaluate:
 
             model_name = 'bert-base-uncased'
             tokenizer = BertTokenizer.from_pretrained(model_name)
-            model = BertForSequenceClassification.from_pretrained('bert_trained')
+            model = self.model
 
             inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length= 128)
             with torch.no_grad():
