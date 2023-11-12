@@ -8,6 +8,8 @@
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import BertTokenizer, TFBertForSequenceClassification
+from transformers import BertTokenizer, BertForSequenceClassification
+import torch
 
 class Evaluate:
     """
@@ -30,17 +32,30 @@ class Evaluate:
         if modelName == 'kerasFcnnModel':
             return np.argmax(self.model.predict(self.x_test), axis=1)
         elif modelName == 'bertModel':
-            textInput = []
-            for this_x_test in self.x_test:
-                thisInput = self.model.tokenizer(this_x_test, return_tensors="pt", padding=True, truncation=True,  max_length = 510)
-                thisTextInput = self.model.tokenizer.decode(thisInput['input_ids'][0])
-                textInput.append(thisTextInput)
-            output = self.model(textInput)
-            labels = [thisOutput['label'] for thisOutput in output]
-            extractedLabels = [int(thisLabel[6:]) for thisLabel in labels]
 
-            # TODO (Yue, 11/10/2023): The labels of true are 1, 2, 3, for example, while those of predicted here may be 3, 1, 2 correspondingly. That matters?
-            return extractedLabels
+            model_name = 'bert-base-uncased'
+            tokenizer = BertTokenizer.from_pretrained(model_name)
+            model = BertForSequenceClassification.from_pretrained('bert_trained')
+
+            inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length= 128)
+            with torch.no_grad():
+                outputs = model(**inputs)
+                logits = outputs.logits
+                predicted_labels = torch.argmax(logits, dim=1)
+            predicted_labels = predicted_labels.tolist()
+            print(predicted_labels)
+
+            # todo (Yue, 11/10/2023, done): The labels of true are 1, 2, 3, for example, while those of predicted here may be 3, 1, 2 correspondingly. That matters?
+            #  YES! That matters except for accuracy. So, we need to do training.
+            # textInput = []
+            # for this_x_test in self.x_test:
+            #     thisInput = self.model.tokenizer(this_x_test, return_tensors="pt", padding=True, truncation=True,  max_length = 128)
+            #     thisTextInput = self.model.tokenizer.decode(thisInput['input_ids'][0])
+            #     textInput.append(thisTextInput)
+            # output = self.model(textInput)
+            #extractedLabels = [int(thisLabel[6:]) for thisLabel in predicted_labels]
+
+            return predicted_labels
         else:
             return self.model.predict(self.x_test)
 

@@ -6,16 +6,14 @@
 #
 # ==============================================================================
 import os
-import tensorflow as tf
 import wittgenstein as lw
 from sklearn.naive_bayes import MultinomialNB
 from tensorflow import keras
-from datasets import *
-from transformers import BertTokenizer, TFBertForSequenceClassification
-from transformers import pipeline
-from transformers import BertTokenizer, BertForSequenceClassification, TextClassificationPipeline
-import tensorflow as tf
 from data_reader import *
+import tensorflow as tf
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW
+from torch.utils.data import DataLoader, TensorDataset, random_split
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -81,7 +79,6 @@ class NaiveBayesModel:
 
         return model
 
-
 class RIPPERModel:
     def __init__(self, x_train, y_train):
         self.x_train = x_train
@@ -96,7 +93,9 @@ class RIPPERModel:
         return model
 
 class BERTModel:
-    def __init__(self, dataset):
+    def __init__(self, dataset, x_train, y_train):
+        self.x_train = x_train
+        self.y_train = y_train
         if dataset == NEWS_20:
             self.numClasses = 20
         elif dataset == NEWS_AG:
@@ -104,10 +103,42 @@ class BERTModel:
         else:
             self.numClasses = 20 + 4
     def usePretrainedBert(self):
+        print('Training BERT model...')
         model_name = 'bert-base-uncased'
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.numClasses)
 
-        classifier = TextClassificationPipeline(model=model, tokenizer=tokenizer, device=-1)                            # 0 for GPU and -1 for CPU
+        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length= 128)
+        labels = torch.tensor(self.y_train, dtype=torch.int64)
 
-        return classifier
+        dataset = TensorDataset(inputs['input_ids'], inputs['attention_mask'], labels)
+
+        train_size = int(0.8 * len(dataset))
+        val_size = len(dataset) - train_size
+        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+        batch_size = 3
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+
+        optimizer = AdamW(model.parameters(), lr=1e-5)
+
+        num_epochs = 10
+        model.train()
+        for epoch in range(num_epochs):
+            total_loss = 0
+            for batch in train_loader:
+                optimizer.zero_grad()
+                input_ids, attention_mask, labels = batch
+                outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
+                loss = outputs.loss
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+            average_loss = total_loss / len(train_loader)
+            print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {average_loss:.4f}")
+
+        model.save_pretrained("bert_trained")
+        print('BERT model trained')
+
+        return model

@@ -8,11 +8,14 @@
 from data_reader import *
 from model import *
 from evaluate import *
-
+from tensorflow.python.client import device_lib
+import tensorflow as tf
 
 # TODO: Tensorflow-GPU?
 
 if __name__ == '__main__':
+    print(tf.config.list_physical_devices('GPU'))
+
     # set the dataset to either: NEWS_20 = 20newsgroup, NEWS_AG = ag news, BOTH = combine both datasets
     dataset = NEWS_20
     # Step 1: Data Reader
@@ -41,7 +44,7 @@ if __name__ == '__main__':
             models.append(rippleModel)
 
         elif thisModelName == 'bertModel':
-            BertModel = BERTModel(dataset)
+            BertModel = BERTModel(dataset, dr.original_x_train, dr.y_test)
             bertModel = BertModel.usePretrainedBert()
             models.append(bertModel)
 
@@ -54,7 +57,6 @@ if __name__ == '__main__':
             evaluate = Evaluate(thisModel, dr.x_test, dr.y_test)
 
         preds = evaluate.predict(modelNames[modelIndex])
-
         evaluate.evaluate(preds)
         print('The accuracy of ' + modelNames[modelIndex] + 'was: ', evaluate.accuracy)
         print('The precision of ' + modelNames[modelIndex] + 'was: ', evaluate.precision)
