@@ -28,7 +28,6 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Further preprocessing -- Josh
 ################################################
 
 
