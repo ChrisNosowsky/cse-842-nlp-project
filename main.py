@@ -21,7 +21,9 @@ FEATURE = Features.BOW
 MODELS_TO_TRAIN = [KERAS_MODEL]
 TOP_VOCAB = True
 STEM = False
+LEMMA = False
 USE_GRID_SEARCH = False
+TEST_SIZE = DEFAULT_TEST_SIZE # either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
 
 

@@ -28,13 +28,12 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Further preprocessing -- Josh
 ################################################
 
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma=False, test_size='default'):
+    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma=False, test_size=DEFAULT_TEST_SIZE):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -155,7 +154,7 @@ class DataReader:
             print("done pre-processing")
 
             if dataset == NEWS_20:
-                if self.test_size != 'default':
+                if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
                                                                         test_size=self.test_size, random_state=42)
@@ -166,8 +165,8 @@ class DataReader:
 
         # ag news
         if dataset == NEWS_AG or dataset == BOTH:
-            data_train_ag = pd.read_csv('data/ag_news/train.csv')
-            data_test_ag = pd.read_csv('data/ag_news/test.csv')
+            data_train_ag = pd.read_csv(AG_NEWS_PATH_TRAIN)
+            data_test_ag = pd.read_csv(AG_NEWS_PATH_TEST)
 
             data_train_ag.drop(['title'], axis=1)
             data_test_ag.drop(['title'], axis=1)
@@ -188,7 +187,7 @@ class DataReader:
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
             print('done pre-processing')
             if dataset == NEWS_AG:
-                if self.test_size != 'default':
+                if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_ag = np.concatenate((data_train_ag, data_test_ag), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_ag[:, 0], data_combine_ag[:, 1],
                                                                         test_size=self.test_size, random_state=42)
@@ -201,7 +200,7 @@ class DataReader:
         if dataset == BOTH:
             data_test_both = np.concatenate((data_test_20, data_test_ag), axis=0)
             data_train_both = np.concatenate((data_train_20, data_train_ag), axis=0)
-            if self.test_size != 'default':
+            if self.test_size != DEFAULT_TEST_SIZE:
                 data_combine_both = np.concatenate((data_train_both, data_test_both), axis=0)
                 X_train, X_test, y_train, y_test = train_test_split(data_combine_both[:, 0], data_combine_both[:, 1],
                                                                     test_size=self.test_size, random_state=42)
@@ -232,33 +231,30 @@ class DataReader:
     def preprocess(self, data):
         processed_data = []
         for i in range(data.shape[0]):
-            # TODO: Optimize further (lot of this filtering can be done in one for loop)
             # break text into list of words
             tokens = nltk.word_tokenize(data[i][0])
 
-            # make text lowercase
-            lowercased_tokens = [token.lower() for token in tokens]
-
-            # remove punctuation
-            filtered_tokens = [token for token in lowercased_tokens if token not in string.punctuation]
-
-            # remove non-numeric
-            filtered_tokens = [self.remove_non_letters(token) for token in filtered_tokens]
-
-            # remove stopwords
             stopwords = nltk.corpus.stopwords.words("english")
-            filtered_tokens = [token for token in filtered_tokens if token not in stopwords]
-
-            # lemmatization
-            if self.lemma:
-                filtered_tokens = [self.lemmatization(token) for token in filtered_tokens]
-
-            # remove stems (optional)
-            if self.stem:
-                filtered_tokens = [self.stem_text(token) for token in filtered_tokens]
-
-            # Remove whitespace and drop empty elements
-            filtered_tokens = [token.strip() for token in filtered_tokens if token.strip()]
+            filtered_tokens = []
+            for token in tokens:
+                # make text lowercase
+                token = token.lower()
+                # remove puctuation
+                if token in string.punctuation:
+                    continue
+                token = self.remove_non_letters(token)
+                # remove stopwords
+                if token in stopwords:
+                    continue
+                # lemmatization (optional)
+                if self.lemma:
+                    token = self.lemmatization(token)
+                # remove stems (optional)
+                if self.stem:
+                    token = self.stem_text(token)
+                # remove whitespace and drop empty elements
+                token = token.strip()
+                filtered_tokens.append(token)
 
             text = ' '.join(filtered_tokens)
             processed_data.append(text)
