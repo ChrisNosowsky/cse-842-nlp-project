@@ -34,7 +34,7 @@ from sklearn.metrics import classification_report
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma = False, test_size='default'):
+    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma=False, test_size='default'):
         self.vocab = None
         self.data_train = None
         self.data_test = None
