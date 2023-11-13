@@ -59,3 +59,5 @@ The f1 score of naiveBayesModelwas:  [0.76506024 0.65753425 0.00502513 0.6182572
 ## Disclosures
 Pre-trained GoogleNews vector for word embeddings downloaded from here:
 https://github.com/mmihaltz/word2vec-GoogleNews-vectors
+
+Chris uses an AMD GPU -- had to download tensorflow-directml-plugin for AMD GPU support.

@@ -5,62 +5,69 @@
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
-from data_reader import *
 from model import *
 from evaluate import *
-from tensorflow.python.client import device_lib
 import tensorflow as tf
 
-# TODO: Tensorflow-GPU?
+#  TODO CHRIS: TEST NEW FEATURE (DOC2VEC)
+#  TODO CHRIS: TEST GRID SEARCH ON NAIVE BAYES + KERAS
+#  TODO CHRIS: TEST STEMMER
+#  TODO CHRIS: TEST KERAS GRAPHS (TRAIN ACC + LOSS METHODS)
+
+# ==== SETUP PARAMS HERE ====
+DEBUG_MODE = True
+DATASET = NEWS_20
+FEATURE = Features.BOW
+MODELS_TO_TRAIN = [KERAS_MODEL]
+TOP_VOCAB = True
+STEM = False
+USE_GRID_SEARCH = False
+# ===========================
+
 
 if __name__ == '__main__':
+    # Check GPU is available
     print(tf.config.list_physical_devices('GPU'))
 
-    # set the dataset to either: NEWS_20 = 20newsgroup, NEWS_AG = ag news, BOTH = combine both datasets
-    dataset = NEWS_20
     # Step 1: Data Reader
-    dr = DataReader(Features.BOW, top_vocab_words=True)
-    dr.open_dataset(dataset=dataset, debug=True)
+    dr = DataReader(FEATURE, top_vocab_words=TOP_VOCAB)
+    dr.open_dataset(dataset=DATASET, debug=DEBUG_MODE)
     dr.build_vocab()
     dr.build_feature_set()
 
     # Step 2: Model(s)
-    modelNames = ['bertModel']
     models = []
-    for thisModelName in modelNames:
-        if thisModelName == 'kerasFcnnModel':
-            KerasModel = KerasFCNNModel(dr.x_train, dr.y_train)
+    for model in MODELS_TO_TRAIN:
+        if model == KERAS_MODEL:
+            KerasModel = KerasFCNNModel(dr.x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
             kerasFcnnModel = KerasModel.learn()
             models.append(kerasFcnnModel)
 
-        elif thisModelName == 'naiveBayesModel':
-            NaiveBayesModel = NaiveBayesModel(dr.x_train, dr.y_train)
-            naiveBayesModel = NaiveBayesModel.learn()
+        elif model == NAIVE_BAYES_MODEL:
+            NBModel = NaiveBayesModel(dr.x_train, dr.y_train, use_grid_search=USE_GRID_SEARCH)
+            naiveBayesModel = NBModel.learn()
             models.append(naiveBayesModel)
 
-        elif thisModelName == 'rippleModel':
+        elif model == RIPPER_MODEL:
             RippleModel = RIPPERModel(dr.x_train, dr.y_train)
             rippleModel = RippleModel.learn()
             models.append(rippleModel)
 
-        elif thisModelName == 'bertModel':
-            BertModel = BERTModel(dataset, dr.original_x_train, dr.y_test)
-            bertModel = BertModel.usePretrainedBert()
+        elif model == BERT_MODEL:
+            BertModel = BERTModel(DATASET, dr.original_x_train, dr.y_test)
+            bertModel = BertModel.use_pretrained_bert()
             models.append(bertModel)
 
     # Step 3: Evaluate
-    modelIndex = 0
-    for thisModel in models:
-        if modelNames[modelIndex] == 'bertModel':
+    for modelIndex, thisModel in enumerate(models):
+        if MODELS_TO_TRAIN[modelIndex] == BERT_MODEL:
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
             evaluate = Evaluate(thisModel, dr.x_test, dr.y_test)
 
-        preds = evaluate.predict(modelNames[modelIndex])
+        preds = evaluate.predict(MODELS_TO_TRAIN[modelIndex])
         evaluate.evaluate(preds)
-        print('The accuracy of ' + modelNames[modelIndex] + 'was: ', evaluate.accuracy)
-        print('The precision of ' + modelNames[modelIndex] + 'was: ', evaluate.precision)
-        print('The recall of ' + modelNames[modelIndex] + 'was: ', evaluate.recall)
-        print('The f1 score of ' + modelNames[modelIndex] + 'was: ', evaluate.f1)
-
-        modelIndex += 1
+        print('The accuracy of ' + MODELS_TO_TRAIN[modelIndex] + ' was: ', evaluate.accuracy)
+        print('The precision of ' + MODELS_TO_TRAIN[modelIndex] + ' was: ', evaluate.precision)
+        print('The recall of ' + MODELS_TO_TRAIN[modelIndex] + ' was: ', evaluate.recall)
+        print('The f1 score of ' + MODELS_TO_TRAIN[modelIndex] + ' was: ', evaluate.f1)

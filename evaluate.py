@@ -5,11 +5,12 @@
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
+import torch
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-from transformers import BertTokenizer, TFBertForSequenceClassification
-from transformers import BertTokenizer, BertForSequenceClassification
-import torch
+from transformers import BertTokenizer
+from constants import *
+
 
 class Evaluate:
     """
@@ -28,11 +29,10 @@ class Evaluate:
         self.recall = 0.0
         self.f1 = 0.0
 
-    def predict(self, modelName):
-        if modelName == 'kerasFcnnModel':
+    def predict(self, model_name):
+        if model_name == KERAS_MODEL:
             return np.argmax(self.model.predict(self.x_test), axis=1)
-        elif modelName == 'bertModel':
-
+        elif model_name == BERT_MODEL:
             model_name = 'bert-base-uncased'
             tokenizer = BertTokenizer.from_pretrained(model_name)
             model = self.model

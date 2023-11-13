@@ -5,16 +5,18 @@
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
-import os
+import torch
+import tensorflow as tf
 import wittgenstein as lw
+import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import MultinomialNB
 from tensorflow import keras
 from data_reader import *
-import tensorflow as tf
 from datasets import *
-import torch
 from transformers import BertTokenizer, BertForSequenceClassification, AdamW
 from torch.utils.data import DataLoader, TensorDataset, random_split
+from scikeras.wrappers import KerasClassifier
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -26,12 +28,24 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 ################################################
 
 
-class KerasFCNNModel:
-    def __init__(self, x_train, y_train, dataset=Datasets.BOTH):
+class AbstractModel:
+    def __init__(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
+
+    def fine_tune_model(self, model, params, k_fold_splits=5):
+        grid_search = GridSearchCV(estimator=model, param_grid=params, cv=k_fold_splits, n_jobs=-1, verbose=2)
+        grid_search.fit(self.x_train, self.y_train)
+        print("Best Parameters: ", grid_search.best_params_)
+        print("Best Accuracy: {:.2f}%".format(grid_search.best_score_ * 100))
+
+
+class KerasFCNNModel(AbstractModel):
+    def __init__(self, x_train, y_train, dataset=Datasets.BOTH, use_grid_search=False):
+        super().__init__(x_train, y_train)
         self.history = None
         self.dataset = dataset
+        self.use_grid_search = use_grid_search
 
     def learn(self):
         in_shape = self.x_train.shape[1]
@@ -39,17 +53,25 @@ class KerasFCNNModel:
         model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
         model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
         model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu))
-        num_classes = 0
-        if self.dataset == Datasets.NEWS_20:
+        if self.dataset == NEWS_20:
             num_classes = 20
-        elif self.dataset == Datasets.NEWS_AG:
+        elif self.dataset == NEWS_AG:
             num_classes = 4
         else:
             num_classes = 24
         model.add(tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax))
-        # learning_rate=0.001
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+
+        if self.use_grid_search:
+            params = {
+                'optimizer__lr': [0.0001, 0.001, 0.05, 0.1],
+                'model__dropout': [0, 0.5],
+                'epochs': [5, 10, 20],
+                'batch_size': [16, 32, 64]
+            }
+            model_wrapped = KerasClassifier(model=model, verbose=0)
+            self.fine_tune_model(model_wrapped, params)
         self.history = model.fit(self.x_train, self.y_train,
                                  epochs=7, batch_size=64)
         model.summary()
@@ -60,30 +82,60 @@ class KerasFCNNModel:
         return model
 
     def plot_train_accuracy(self):
-        # TODO: TBD Later stage of project
-        pass
+        # Extract training accuracy values and epochs from the History object
+        train_acc = self.history.history['accuracy']
+        epochs = np.arange(1, len(train_acc) + 1)
 
-    def plot_loss_accuracy(self):
-        # TODO: TBD Later stage of project
-        pass
+        # Plot training accuracy
+        plt.plot(epochs, train_acc, label='Training Accuracy', marker='o')
+        plt.title('Training Accuracy Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
-class NaiveBayesModel:
-    def __init__(self, x_train, y_train):
-        self.x_train = x_train
-        self.y_train = y_train
+    def plot_training_loss(self):
+        # Extract training loss values and epochs from the History object
+        train_loss = self.history.history['loss']
+        epochs = np.arange(1, len(train_loss) + 1)
+
+        # Plot training loss
+        plt.plot(epochs, train_loss, label='Training Loss', marker='o')
+        plt.title('Training Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+
+class NaiveBayesModel(AbstractModel):
+    def __init__(self, x_train, y_train, use_grid_search=False):
+        super().__init__(x_train, y_train)
+        self.use_grid_search = use_grid_search
 
     def learn(self):
         print('Training Naive Bayes model...')
         model = MultinomialNB()
+
+        if self.use_grid_search:
+            params = {
+                'vectorizer__max_features': [5000, 10000, 15000],
+                'vectorizer__ngram_range': [(1, 1), (1, 2)],
+                'classifier__alpha': [0.1, 0.5, 1.0]
+            }
+            self.fine_tune_model(model, params)
+
         model.fit(self.x_train, self.y_train)
         print('Naive Bayes model trained')
 
         return model
 
-class RIPPERModel:
+
+class RIPPERModel(AbstractModel):
     def __init__(self, x_train, y_train):
-        self.x_train = x_train
-        self.y_train = y_train
+        super().__init__(x_train, y_train)
 
     def learn(self):
         print('Training Ripple model...')
@@ -93,23 +145,24 @@ class RIPPERModel:
 
         return model
 
-class BERTModel:
+
+class BERTModel(AbstractModel):
     def __init__(self, dataset, x_train, y_train):
-        self.x_train = x_train
-        self.y_train = y_train
+        super().__init__(x_train, y_train)
         if dataset == NEWS_20:
             self.numClasses = 20
         elif dataset == NEWS_AG:
             self.numClasses = 4
         else:
             self.numClasses = 20 + 4
-    def usePretrainedBert(self):
+
+    def use_pretrained_bert(self):
         print('Training BERT model...')
         model_name = 'bert-base-uncased'
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.numClasses)
 
-        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length= 128)
+        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=128)
         labels = torch.tensor(self.y_train, dtype=torch.int64)
 
         dataset = TensorDataset(inputs['input_ids'], inputs['attention_mask'], labels)
@@ -120,7 +173,7 @@ class BERTModel:
 
         batch_size = 2
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+        # val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
         optimizer = AdamW(model.parameters(), lr=1e-5)
 

@@ -28,12 +28,13 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
+# TODO: Further preprocessing -- Josh
 ################################################
 
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False, test_size='default'):
+    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma = False, test_size='default'):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -47,6 +48,8 @@ class DataReader:
         self.original_x_train = None
         self.label_encoder = LabelEncoder()
         self.top_vocab_words = top_vocab_words
+        self.stem = stem
+        self.lemma = lemma
         self.feature = feature
         self.cores = multiprocessing.cpu_count()
         self.nltk_download_check()
@@ -122,10 +125,19 @@ class DataReader:
         train_df.to_csv('data/20newsgroup/20_news_train.csv')
 
     def open_dataset(self, dataset=BOTH, debug=False):
-        # dataset:
-        #   NEWS_20   - 20newsgroup
-        #   NEWS_AG   - ag news
-        #   BOTH - combine both datasets
+        """
+        Opens the dataset of choosing.
+        Options:
+            NEWS_20   - 20newsgroup
+            NEWS_AG   - ag news
+            BOTH - combine both datasets
+        :param dataset: Enum value of the dataset(s) of choosing
+        :param debug: Boolean value of whether to run in debug mode
+        """
+        data_test_20 = None
+        data_train_20 = None
+        data_test_ag = None
+        data_train_ag = None
 
         if debug:
             top_rows = 1000
@@ -134,12 +146,14 @@ class DataReader:
 
         # 20newsgroup
         if dataset == NEWS_20 or dataset == BOTH:
-            data_test_20 = np.array(pd.read_csv('data/20newsgroup/20_news_test.csv', nrows=top_rows))[:, 1:]
-            data_train_20 = np.array(pd.read_csv('data/20newsgroup/20_news_train.csv', nrows=top_rows))[:, 1:]
+            data_train_20 = np.array(pd.read_csv(NEWS_20_PATH_TRAIN, nrows=top_rows))[:, 1:]
+            data_test_20 = np.array(pd.read_csv(NEWS_20_PATH_TEST, nrows=top_rows))[:, 1:]
+
             print("pre-processing 20newsgroup dataset")
             data_test_20[:, 0] = self.preprocess(data_test_20)
             data_train_20[:, 0] = self.preprocess(data_train_20)
             print("done pre-processing")
+
             if dataset == NEWS_20:
                 if self.test_size != 'default':
                     data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
@@ -152,12 +166,15 @@ class DataReader:
 
         # ag news
         if dataset == NEWS_AG or dataset == BOTH:
-            data_test_ag = pd.read_csv('data/ag_news/test.csv')
             data_train_ag = pd.read_csv('data/ag_news/train.csv')
-            data_test_ag.drop(['title'], axis=1)
+            data_test_ag = pd.read_csv('data/ag_news/test.csv')
+
             data_train_ag.drop(['title'], axis=1)
-            data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'class']))
+            data_test_ag.drop(['title'], axis=1)
+
             data_train_ag = np.array(data_train_ag.reindex(columns=['text', 'class']))
+            data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'class']))
+
             if top_rows is not None:
                 data_test_ag = data_test_ag[:top_rows]
                 data_train_ag = data_train_ag[:top_rows]
@@ -194,7 +211,6 @@ class DataReader:
             self.data_test = data_test_both
             self.data_train = data_train_both
 
-        c_list = list(self.data_test[:, 1])
         self.classes = set(list(self.data_test[:, 1]))
 
         # shuffle data
@@ -213,10 +229,10 @@ class DataReader:
 
         self.class_mapping = dict(zip(self.y_train, y_train_words))
 
-
-    def preprocess(self, data, stem=False, lemma=False):
+    def preprocess(self, data):
         processed_data = []
         for i in range(data.shape[0]):
+            # TODO: Optimize further (lot of this filtering can be done in one for loop)
             # break text into list of words
             tokens = nltk.word_tokenize(data[i][0])
 
@@ -234,12 +250,15 @@ class DataReader:
             filtered_tokens = [token for token in filtered_tokens if token not in stopwords]
 
             # lemmatization
-            if lemma:
+            if self.lemma:
                 filtered_tokens = [self.lemmatization(token) for token in filtered_tokens]
 
             # remove stems (optional)
-            if stem:
+            if self.stem:
                 filtered_tokens = [self.stem_text(token) for token in filtered_tokens]
+
+            # Remove whitespace and drop empty elements
+            filtered_tokens = [token.strip() for token in filtered_tokens if token.strip()]
 
             text = ' '.join(filtered_tokens)
             processed_data.append(text)
