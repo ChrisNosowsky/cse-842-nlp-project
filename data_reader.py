@@ -17,9 +17,10 @@ from gensim.models import Word2Vec
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from gensim.test.test_doc2vec import ConcatenatedDoc2Vec
-from nltk import PorterStemmer
+from nltk import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
 from constants import *
 from features import *
 from collections import Counter
@@ -33,7 +34,7 @@ from sklearn.metrics import classification_report
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False):
+    def __init__(self, feature=BOW, top_vocab_words=False, test_size='default'):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -50,6 +51,7 @@ class DataReader:
         self.feature = feature
         self.cores = multiprocessing.cpu_count()
         self.nltk_download_check()
+        self.test_size = test_size
 
     @staticmethod
     def nltk_download_check():
@@ -63,6 +65,18 @@ class DataReader:
                 print("Downloaded the '" + corpus + "' corpus")
             else:
                 print("The '" + corpus + "' corpus is downloaded.")
+
+
+    @staticmethod
+    def lemmatization(text):
+        """
+        reduces word to base form
+        :param text: String of the document content
+        :return: String of lemmatized text
+        """
+        wn_lemmatizer = WordNetLemmatizer()
+        text = ' '.join([wn_lemmatizer.lemmatize(word) for word in text.split()])
+        return temp
 
     @staticmethod
     def stem_text(text):
@@ -90,32 +104,23 @@ class DataReader:
         train_data = []
         # iterate through test and train folders
         for i, data_folder in enumerate(os.listdir('data/20newsgroup')):
-            # iterate through each label folder
-            for j, label_folder in enumerate(os.listdir(os.path.join('data/20newsgroup', data_folder))):
-                # iterate through each file
-                for k, file in enumerate(os.listdir(os.path.join('data/20newsgroup', data_folder, label_folder))):
-                    # read in file
-                    f = os.path.join('data/20newsgroup', data_folder, label_folder, file)
-                    f = open(f, 'r')
-                    f = f.read()
-                    # append to train/test list
-                    test_data.append([f, [label_folder]]) if i == 0 else train_data.append([f, label_folder])
-                    x = 10
-                print('done', label_folder)
+            if 'csv' not in data_folder:
+                # iterate through each label folder
+                for j, label_folder in enumerate(os.listdir(os.path.join('data/20newsgroup', data_folder))):
+                    # iterate through each file
+                    for k, file in enumerate(os.listdir(os.path.join('data/20newsgroup', data_folder, label_folder))):
+                        # read in file
+                        f = os.path.join('data/20newsgroup', data_folder, label_folder, file)
+                        f = open(f, 'r')
+                        f = f.read()
+                        # append to train/test list
+                        test_data.append([f, label_folder]) if i == 0 else train_data.append([f, label_folder])
+                        x = 10
+                    print('done', label_folder)
         test_df = pd.DataFrame(test_data)
         train_df = pd.DataFrame(train_data)
         test_df.to_csv('data/20newsgroup/20_news_test.csv')
         train_df.to_csv('data/20newsgroup/20_news_train.csv')
-        np.savetxt('data/20newsgroup/20_news_pre_processed_test.csv', self.data_test)
-        np.savetxt('data/20newsgroup/20_news_pre_processed_train.csv', self.data_train)
-
-        test_df = pd.DataFrame(self.data_test)
-        train_df = pd.DataFrame(self.data_train)
-        test_df.to_csv('data/20newsgroup/20_news_pre_processed_test.csv')
-        train_df.to_csv('data/20newsgroup/20_news_pre_processed_train.csv')
-
-        self.data_test = np.array(pd.read_csv('data/20newsgroup/20_news_pre_processed_test.csv'))[:, 1:]
-        self.data_train = np.array(pd.read_csv('data/20newsgroup/20_news_pre_processed_train.csv'))[:, 1:]
 
     def open_dataset(self, dataset=BOTH, debug=False):
         # dataset:
@@ -137,6 +142,12 @@ class DataReader:
             data_train_20[:, 0] = self.preprocess(data_train_20)
             print("done pre-processing")
             if dataset == NEWS_20:
+                if self.test_size != 'default':
+                    data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
+                    X_train, X_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
+                                                                        test_size=self.test_size, random_state=42)
+                    data_train_20 = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                    data_test_20 = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
                 self.data_test = data_test_20
                 self.data_train = data_train_20
 
@@ -148,8 +159,12 @@ class DataReader:
             data_train_ag.drop(['title'], axis=1)
             data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'class']))
             data_train_ag = np.array(data_train_ag.reindex(columns=['text', 'class']))
-            random_indices = np.random.choice(data_train_ag.shape[0], size=12000, replace=False)
-            data_train_ag = data_train_ag[random_indices]
+            if top_rows is not None:
+                data_test_ag = data_test_ag[:top_rows]
+                data_train_ag = data_train_ag[:top_rows]
+            else:
+                random_indices = np.random.choice(data_train_ag.shape[0], size=12000, replace=False)
+                data_train_ag = data_train_ag[random_indices]
             for i in range(data_test_ag.shape[0]): data_test_ag[i][1] = str(data_test_ag[i][1])
             for i in range(data_train_ag.shape[0]): data_train_ag[i][1] = str(data_train_ag[i][1])
             print('pre-processing ag news dataset')
@@ -157,14 +172,30 @@ class DataReader:
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
             print('done pre-processing')
             if dataset == NEWS_AG:
+                if self.test_size != 'default':
+                    data_combine_ag = np.concatenate((data_train_ag, data_test_ag), axis=0)
+                    X_train, X_test, y_train, y_test = train_test_split(data_combine_ag[:, 0], data_combine_ag[:, 1],
+                                                                        test_size=self.test_size, random_state=42)
+                    data_train_ag = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                    data_test_ag = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
                 self.data_test = data_test_ag
                 self.data_train = data_train_ag
 
         # combine datasets
         if dataset == BOTH:
-            self.data_test = np.concatenate((data_test_20, data_test_ag), axis=0)
-            self.data_train = np.concatenate((data_train_20, data_train_ag), axis=0)
+            data_test_both = np.concatenate((data_test_20, data_test_ag), axis=0)
+            data_train_both = np.concatenate((data_train_20, data_train_ag), axis=0)
+            if self.test_size != 'default':
+                data_combine_both = np.concatenate((data_train_both, data_test_both), axis=0)
+                X_train, X_test, y_train, y_test = train_test_split(data_combine_both[:, 0], data_combine_both[:, 1],
+                                                                    test_size=self.test_size, random_state=42)
+                data_train_both = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                data_test_both = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
 
+            self.data_test = data_test_both
+            self.data_train = data_train_both
+
+        c_list = list(self.data_test[:, 1])
         self.classes = set(list(self.data_test[:, 1]))
 
         # shuffle data
@@ -184,7 +215,7 @@ class DataReader:
         self.class_mapping = dict(zip(self.y_train, y_train_words))
 
 
-    def preprocess(self, data, stem=False):
+    def preprocess(self, data, stem=False, lemma=False):
         processed_data = []
         for i in range(data.shape[0]):
             # break text into list of words
@@ -202,6 +233,10 @@ class DataReader:
             # remove stopwords
             stopwords = nltk.corpus.stopwords.words("english")
             filtered_tokens = [token for token in filtered_tokens if token not in stopwords]
+
+            # lemmatization
+            if lemma:
+                filtered_tokens = [self.lemmatization(token) for token in filtered_tokens]
 
             # remove stems (optional)
             if stem:

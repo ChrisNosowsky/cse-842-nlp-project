@@ -14,5 +14,5 @@ NEWS_20 = 4
 NEWS_AG = 5
 BOTH = 6
 CLASS_TO_LABEL_MAPPING = {}
-NLTK_CORPUS = ["punkt", "stopwords"]
+NLTK_CORPUS = ["punkt", "stopwords", "wordnet"]
 TOP_VOCAB_WORDS = 15000
