@@ -16,7 +16,6 @@ from data_reader import *
 from datasets import *
 from transformers import BertTokenizer, BertForSequenceClassification, AdamW
 from torch.utils.data import DataLoader, TensorDataset, random_split
-from scikeras.wrappers import KerasClassifier
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -25,6 +24,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # TODO: Tweak model parameters -- All team
 # TODO: Add Ray Tune or Hyperopt tuning parameters -- Yue
 # TODO: LM? (BERT pretrained models, maybe two? -- One for Yue TODO, One for Chris TODO
+# TODO: Try again at adding GridSearch with Keras? (optional)
+# Chris Notes:
+# Below is originally for Doc2Vec feature.
+#         # clf = LinearSVC(C=0.0025)
+#         # clf.fit(train_vectors, self.y_train)
 ################################################
 
 
@@ -52,7 +56,7 @@ class KerasFCNNModel(AbstractModel):
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
         model.add(tf.keras.layers.Dropout(0.5))
-        model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu), kernel_regularizer=keras.regularizers.l2(0.1))
+        model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
         model.add(tf.keras.layers.Dropout(0.5))
         model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
         if self.dataset == NEWS_20:

@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import nltk
 import multiprocessing
+from random import shuffle
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from gensim.test.test_doc2vec import ConcatenatedDoc2Vec
@@ -22,10 +23,11 @@ from sklearn.model_selection import train_test_split
 from constants import *
 from features import *
 from collections import Counter
-from sklearn.svm import LinearSVC
-from sklearn.metrics import classification_report
+
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
+# TODO: Save the DM and DBOW embeddings to speed up runtime after first save
+# TODO: Figure how to load GoogleNews pretrained embeddings for Doc2Vec feature
 ################################################
 
 
@@ -55,10 +57,13 @@ class DataReader:
     @staticmethod
     def nltk_download_check():
         installed_corpora = os.listdir(nltk.data.find("corpora"))
-
+        installed_tokenizers = os.listdir(nltk.data.find("tokenizers"))
+        installed_nltk = installed_corpora + installed_tokenizers
+        print(installed_nltk)
         print("Checking if NLTK corpora requirements are installed..")
         for corpus in NLTK_CORPUS:
-            if corpus not in installed_corpora:
+            corpus_zip = corpus + ".zip"
+            if corpus not in installed_nltk and corpus_zip not in installed_nltk:
                 print("The '" + corpus + "' corpus is not downloaded. Downloading...")
                 nltk.download(corpus)
                 print("Downloaded the '" + corpus + "' corpus")
@@ -96,7 +101,8 @@ class DataReader:
         """
         return re.sub("[^a-zA-Z]", " ", text)
 
-    def convert_file_dir_to_csv(self):
+    @staticmethod
+    def convert_file_dir_to_csv():
         # code used to combine data from folders and save
         test_data = []
         train_data = []
@@ -117,8 +123,8 @@ class DataReader:
                     print('done', label_folder)
         test_df = pd.DataFrame(test_data)
         train_df = pd.DataFrame(train_data)
-        test_df.to_csv('data/20newsgroup/20_news_test.csv')
-        train_df.to_csv('data/20newsgroup/20_news_train.csv')
+        test_df.to_csv(NEWS_20_PATH_TEST)
+        train_df.to_csv(NEWS_20_PATH_TRAIN)
 
     def open_dataset(self, dataset=BOTH, debug=False):
         """
@@ -292,9 +298,9 @@ class DataReader:
             all_newsgroup_documents.extend(test_docs)
             doc_list = all_newsgroup_documents[:]
             print('%d docs: %d train, %d test' % (len(doc_list), len(train_docs), len(test_docs)))
-            print(len(self.y_train))
-            self.generate_doc2vec_feature(all_newsgroup_documents,
-                                          doc_list, train_docs, test_docs)
+            print("Train Label Size: " + str(len(self.y_train)))
+            self.x_train, self.x_test = self.generate_doc2vec_feature(all_newsgroup_documents,
+                                                                      doc_list, train_docs, test_docs)
 
     @staticmethod
     def convert_newsgroup_to_tagged_docs(docs, split):
@@ -342,9 +348,9 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_doc2vec_feature(self, all_newsgroup_documents, doc_list, train_docs, test_docs, window_size=5):
-        dbow_model = Doc2Vec(dm=0, dm_concat=1, sample=1e-5, size=300, window=5, negative=5, hs=0, min_count=2,
+        dbow_model = Doc2Vec(dm=0, dm_concat=1, sample=1e-5, window=5, negative=5, hs=0, min_count=2,
                              workers=self.cores)
-        dm_model = Doc2Vec(dm=1, dm_mean=1, sample=1e-5, size=300, window=10, negative=5, hs=0, min_count=2,
+        dm_model = Doc2Vec(dm=1, dm_mean=1, sample=1e-5, window=10, negative=5, hs=0, min_count=2,
                            workers=self.cores)
 
         # bow_model.load(self.load_pretrained_word_embeddings())
@@ -357,7 +363,7 @@ class DataReader:
 
         dbow_dmm_model = ConcatenatedDoc2Vec([dbow_model, dm_model])
         alpha, min_alpha, passes = (0.025, 0.001, 100)
-
+        shuffle(doc_list)
         dbow_model.alpha, dbow_model.min_alpha = alpha, alpha
         dbow_model.train(doc_list, total_examples=len(doc_list), epochs=passes)
         dm_model.alpha, dm_model.min_alpha = alpha, alpha
@@ -369,13 +375,7 @@ class DataReader:
         train_vectors = self.extract_vectors(dbow_dmm_model, train_docs)
         test_vectors = self.extract_vectors(dbow_dmm_model, test_docs)
 
-        clf = LinearSVC(C=0.0025)
-        clf.fit(train_vectors, self.y_train)
-
-        predDoc = clf.predict(test_vectors)
-
-        print(classification_report(self.label_encoder.inverse_transform(self.y_test),
-                                    self.label_encoder.inverse_transform(predDoc)))
+        return np.array(train_vectors), np.array(test_vectors)
 
     # def load_pretrained_word_embeddings(self):
     #     f_in = gzip.open('GoogleNews-vectors-negative300.bin.gz', 'rb')

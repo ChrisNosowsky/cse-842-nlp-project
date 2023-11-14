@@ -7,9 +7,10 @@
 # ==============================================================================
 import torch
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-from transformers import BertTokenizer
 from constants import *
+from transformers import BertTokenizer
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 
 class Evaluate:
@@ -37,7 +38,7 @@ class Evaluate:
             tokenizer = BertTokenizer.from_pretrained(model_name)
             model = self.model
 
-            inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length= 128)
+            inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length=128)
             with torch.no_grad():
                 outputs = model(**inputs)
                 logits = outputs.logits
@@ -45,15 +46,17 @@ class Evaluate:
             predicted_labels = predicted_labels.tolist()
             print(predicted_labels)
 
-            # todo (Yue, 11/10/2023, done): The labels of true are 1, 2, 3, for example, while those of predicted here may be 3, 1, 2 correspondingly. That matters?
+            # todo (Yue, 11/10/2023, done): The labels of true are 1, 2, 3,
+            #  for example, while those of predicted here may be 3, 1, 2 correspondingly. That matters?
             #  YES! That matters except for accuracy. So, we need to do training.
             # textInput = []
             # for this_x_test in self.x_test:
-            #     thisInput = self.model.tokenizer(this_x_test, return_tensors="pt", padding=True, truncation=True,  max_length = 128)
+            #     thisInput = self.model.tokenizer(this_x_test, return_tensors="pt", padding=True, truncation=True,
+            #     max_length = 128)
             #     thisTextInput = self.model.tokenizer.decode(thisInput['input_ids'][0])
             #     textInput.append(thisTextInput)
             # output = self.model(textInput)
-            #extractedLabels = [int(thisLabel[6:]) for thisLabel in predicted_labels]
+            # extractedLabels = [int(thisLabel[6:]) for thisLabel in predicted_labels]
 
             return predicted_labels
         else:
@@ -65,7 +68,6 @@ class Evaluate:
         self.recall = recall_score(self.y_test, predictions, average=None)
         self.f1 = f1_score(self.y_test, predictions, average=None)
 
-    def plot_results(self):
-        # TODO: TBD Later stage of project
-        pass
-
+    def evaluate_classification_report(self, label_encoder, predictions):
+        return classification_report(label_encoder.inverse_transform(self.y_test),
+                                     label_encoder.inverse_transform(predictions))
