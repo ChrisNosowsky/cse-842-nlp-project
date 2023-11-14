@@ -10,8 +10,6 @@ from evaluate import *
 import tensorflow as tf
 
 #  TODO CHRIS: TEST NEW FEATURE (DOC2VEC)
-#  TODO CHRIS: TEST GRID SEARCH ON NAIVE BAYES + KERAS
-#  TODO CHRIS: TEST STEMMER
 #  TODO CHRIS: TEST KERAS GRAPHS (TRAIN ACC + LOSS METHODS)
 
 # ==== SETUP PARAMS HERE ====
@@ -20,10 +18,10 @@ DATASET = NEWS_20
 FEATURE = Features.BOW
 MODELS_TO_TRAIN = [KERAS_MODEL]
 TOP_VOCAB = True
-STEM = False
+STEM = True
 LEMMA = False
-USE_GRID_SEARCH = False
-TEST_SIZE = DEFAULT_TEST_SIZE # either DEFAULT_TEST_SIZE or value between (0,1)
+USE_GRID_SEARCH = True
+TEST_SIZE = DEFAULT_TEST_SIZE           # either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
 
 
@@ -44,6 +42,7 @@ if __name__ == '__main__':
             KerasModel = KerasFCNNModel(dr.x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
             kerasFcnnModel = KerasModel.learn()
             models.append(kerasFcnnModel)
+            KerasModel.plot_train_accuracy()
 
         elif model == NAIVE_BAYES_MODEL:
             NBModel = NaiveBayesModel(dr.x_train, dr.y_train, use_grid_search=USE_GRID_SEARCH)
@@ -66,6 +65,7 @@ if __name__ == '__main__':
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
             evaluate = Evaluate(thisModel, dr.x_test, dr.y_test)
+
 
         preds = evaluate.predict(MODELS_TO_TRAIN[modelIndex])
         evaluate.evaluate(preds)

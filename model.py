@@ -51,8 +51,10 @@ class KerasFCNNModel(AbstractModel):
         in_shape = self.x_train.shape[1]
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
-        model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
-        model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu))
+        model.add(tf.keras.layers.Dropout(0.5))
+        model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu), kernel_regularizer=keras.regularizers.l2(0.1))
+        model.add(tf.keras.layers.Dropout(0.5))
+        model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
         if self.dataset == NEWS_20:
             num_classes = 20
         elif self.dataset == NEWS_AG:
@@ -63,15 +65,19 @@ class KerasFCNNModel(AbstractModel):
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-        if self.use_grid_search:
-            params = {
-                'optimizer__lr': [0.0001, 0.001, 0.05, 0.1],
-                'model__dropout': [0, 0.5],
-                'epochs': [5, 10, 20],
-                'batch_size': [16, 32, 64]
-            }
-            model_wrapped = KerasClassifier(model=model, verbose=0)
-            self.fine_tune_model(model_wrapped, params)
+        # if self.use_grid_search:
+        #     params = {
+        #         'optimizer__lr': [0.0001, 0.001, 0.05, 0.1],
+        #         'model__dropout': [0, 0.5],
+        #         'epochs': [5, 10, 20],
+        #         'batch_size': [16, 32, 64]
+        #     }
+        #     model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+        #     model_wrapped = KerasClassifier(model=model, loss="sparse_categorical_crossentropy", optimizer=opt,
+        #                                     metrics=['accuracy'], verbose=0)
+        #     self.fine_tune_model(model_wrapped, params)
+        # else:
+        #     model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
         self.history = model.fit(self.x_train, self.y_train,
                                  epochs=7, batch_size=64)
         model.summary()
@@ -120,11 +126,8 @@ class NaiveBayesModel(AbstractModel):
         model = MultinomialNB()
 
         if self.use_grid_search:
-            params = {
-                'vectorizer__max_features': [5000, 10000, 15000],
-                'vectorizer__ngram_range': [(1, 1), (1, 2)],
-                'classifier__alpha': [0.1, 0.5, 1.0]
-            }
+            params = {'alpha': [0.00001, 0.0001, 0.001, 0.1, 1, 10, 100, 1000]}
+            # best in debug: 0.1
             self.fine_tune_model(model, params)
 
         model.fit(self.x_train, self.y_train)

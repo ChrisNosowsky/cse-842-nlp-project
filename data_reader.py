@@ -12,8 +12,6 @@ import numpy as np
 import pandas as pd
 import nltk
 import multiprocessing
-import gensim
-from gensim.models import Word2Vec
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from gensim.test.test_doc2vec import ConcatenatedDoc2Vec
@@ -67,7 +65,6 @@ class DataReader:
             else:
                 print("The '" + corpus + "' corpus is downloaded.")
 
-
     @staticmethod
     def lemmatization(text):
         """
@@ -77,7 +74,7 @@ class DataReader:
         """
         wn_lemmatizer = WordNetLemmatizer()
         text = ' '.join([wn_lemmatizer.lemmatize(word) for word in text.split()])
-        return temp
+        return text
 
     @staticmethod
     def stem_text(text):
