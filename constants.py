@@ -35,3 +35,9 @@ AG_NEWS_PATH_TEST = AG_NEWS_DIR + "/test.csv"
 NLTK_CORPUS = ["punkt", "stopwords", "wordnet"]
 DEFAULT_TEST_SIZE = 'default'
 TOP_VOCAB_WORDS = 15000
+AG_NEWS_CLASS_MAPPING = {
+    1: 'World',
+    2: 'Sports',
+    3: 'Business',
+    4: 'Sci/Tech'
+}

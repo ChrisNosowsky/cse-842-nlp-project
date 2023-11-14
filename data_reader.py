@@ -174,8 +174,11 @@ class DataReader:
             data_train_ag.drop(['title'], axis=1)
             data_test_ag.drop(['title'], axis=1)
 
-            data_train_ag = np.array(data_train_ag.reindex(columns=['text', 'class']))
-            data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'class']))
+            data_train_ag['topic'] = data_train_ag['topic'].map(AG_NEWS_CLASS_MAPPING)
+            data_test_ag['topic'] = data_test_ag['topic'].map(AG_NEWS_CLASS_MAPPING)
+
+            data_train_ag = np.array(data_train_ag.reindex(columns=['text', 'topic']))
+            data_test_ag = np.array(data_test_ag.reindex(columns=['text', 'topic']))
 
             if top_rows is not None:
                 data_test_ag = data_test_ag[:top_rows]

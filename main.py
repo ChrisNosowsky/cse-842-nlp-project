@@ -10,22 +10,24 @@ from evaluate import *
 import tensorflow as tf
 
 # ==== SETUP PARAMS HERE ====
-DEBUG_MODE = True
-DATASET = NEWS_20
-FEATURE = Features.DOC2VEC
-MODELS_TO_TRAIN = [KERAS_MODEL]
-TOP_VOCAB = True
-STEM = True
-LEMMA = False
-USE_GRID_SEARCH = True
-# Either DEFAULT_TEST_SIZE or value between (0,1)
-TEST_SIZE = DEFAULT_TEST_SIZE
+DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
+DATASET = BOTH                          # BOTH, NEWS_AG, or 20_NEWS
+FEATURE = Features.BOW                  # BOW, NGRAMS, TFIDF, or DOC2VEC
+MODELS_TO_TRAIN = [KERAS_MODEL]         # Models to train
+TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
+STEM = True                             # Stem words
+LEMMA = False                           # Lemmatize words
+USE_GRID_SEARCH = True                  # Use GridSearchCV
+TEST_SIZE = DEFAULT_TEST_SIZE           # Either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
 
 
 if __name__ == '__main__':
     # Check GPU is available
     print(tf.config.list_physical_devices('GPU'))
+    config = tf.compat.v1.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.compat.v1.Session(config=config)
 
     # Step 1: Data Reader
     dr = DataReader(FEATURE, top_vocab_words=TOP_VOCAB)

@@ -83,7 +83,7 @@ class KerasFCNNModel(AbstractModel):
         # else:
         #     model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
         self.history = model.fit(self.x_train, self.y_train,
-                                 epochs=7, batch_size=64)
+                                 epochs=7, batch_size=32)
         model.summary()
         train_acc = self.history.history['accuracy'][-1]
         train_loss = self.history.history['loss'][-1]
