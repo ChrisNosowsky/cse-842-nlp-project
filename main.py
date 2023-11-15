@@ -65,7 +65,7 @@ if __name__ == '__main__':
             models.append(rippleModel)
 
         elif model == BERT_MODEL:
-            BertModel = BERTModel(DATASET, dr.original_x_train, dr.y_test)
+            BertModel = BERTModel(DATASET, dr.original_x_train, dr.y_train)
             bertModel = BertModel.use_pretrained_bert()
             models.append(bertModel)
 

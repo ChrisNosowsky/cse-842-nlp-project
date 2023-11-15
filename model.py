@@ -162,11 +162,16 @@ class BERTModel(AbstractModel):
     def use_pretrained_bert(self):
         print('Training BERT model...')
         model_name = 'bert-base-uncased'
+        print(self.num_classes)
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.num_classes)
 
         inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=128)
         labels = torch.tensor(self.y_train, dtype=torch.int64)
+
+        print("Input IDs size:", inputs['input_ids'].size())
+        print("Attention Mask size:", inputs['attention_mask'].size())
+        print("Labels size:", labels.size())
 
         dataset = TensorDataset(inputs['input_ids'], inputs['attention_mask'], labels)
 
