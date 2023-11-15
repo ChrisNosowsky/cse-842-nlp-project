@@ -124,7 +124,8 @@ TBD
 |---------------------------|-----------|-----------|-----------|---------|
 |      Macro Avg            |   0.03    |   0.08    |   0.04    |         |
 |   Weighted Avg            |   0.05    |   0.16    |   0.08    |         |
-
+#### WORD2VEC
+TBD
 
 ### RIPPER Model
 #### BOW
@@ -134,6 +135,8 @@ TBD
 #### NGRAMS
 TBD
 #### DOC2VEC
+TBD
+#### WORD2VEC
 TBD
 
 ### Naive Bayes Model
@@ -235,6 +238,8 @@ TBD
 |---------------------------|-----------|-----------|-----------|---------|
 |      Macro Avg            |   0.03    |   0.06    |   0.04    |         |
 |   Weighted Avg            |   0.10    |   0.19    |   0.12    |         |
+#### WORD2VEC
+TBD
 
 ### BERT Model
 #### BOW
@@ -244,6 +249,8 @@ TBD
 #### NGRAMS
 TBD
 #### DOC2VEC
+TBD
+#### WORD2VEC
 TBD
 
 ## Result Notes (Dev Notes -- Add here)
