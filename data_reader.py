@@ -23,6 +23,7 @@ from sklearn.model_selection import train_test_split
 from constants import *
 from features import *
 from collections import Counter
+from gensim.models import Word2Vec
 
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
@@ -245,7 +246,7 @@ class DataReader:
             for token in tokens:
                 # make text lowercase
                 token = token.lower()
-                # remove puctuation
+                # remove punctuation
                 if token in string.punctuation:
                     continue
                 token = self.remove_non_letters(token)
@@ -304,6 +305,9 @@ class DataReader:
             print("Train Label Size: " + str(len(self.y_train)))
             self.x_train, self.x_test = self.generate_doc2vec_feature(all_newsgroup_documents,
                                                                       doc_list, train_docs, test_docs)
+        if self.feature == Features.WORD2VEC:
+            print("Creating Word2Vec Feature")
+            self.x_train, self.x_test = self.generate_word2vec_features()
 
     @staticmethod
     def convert_newsgroup_to_tagged_docs(docs, split):
@@ -388,3 +392,18 @@ class DataReader:
     #     model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin')
     #     model.save('GoogleNews-vectors-negative300.bin')
     #     return model
+
+    def generate_word2vec_features(self):
+        tokenized_senteces = [sentence.split() for sentence in self.x_train]
+        word2vec_model = Word2Vec(sentences=tokenized_senteces, vector_size=300, window=30, min_count=30, workers=4)
+
+        def sentence_to_vector(sentence):
+            words = sentence.split()
+            vectors = [word2vec_model.wv[word] for word in words if word in word2vec_model.wv]
+            if not vectors:
+                return np.zeros(word2vec_model.vector_size)
+            return np.mean(vectors, axis=0)
+
+        x_train_w2v = np.array([sentence_to_vector(sentence) for sentence in self.x_train])
+        x_test_w2v = np.array([sentence_to_vector(sentence) for sentence in self.x_test])
+        return x_train_w2v, x_test_w2v

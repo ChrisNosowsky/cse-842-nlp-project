@@ -12,7 +12,7 @@ import tensorflow as tf
 # ==== SETUP PARAMS HERE ====
 DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
 DATASET = BOTH                          # BOTH, NEWS_AG, or 20_NEWS
-FEATURE = Features.BOW                  # BOW, NGRAMS, TFIDF, or DOC2VEC
+FEATURE = Features.BOW               # BOW, NGRAMS, TFIDF, DOC2VEC, or WORD2VEC
 MODELS_TO_TRAIN = [KERAS_MODEL]         # Models to train
 TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
 STEM = True                             # Stem words
