@@ -355,7 +355,7 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_doc2vec_feature(self, all_newsgroup_documents, doc_list, train_docs, test_docs, window_size=5):
-        dbow_model = Doc2Vec(dm=0, dm_concat=1, sample=1e-5, window=5, negative=5, hs=0, min_count=2,
+        dbow_model = Doc2Vec(dm=0, dm_concat=1, sample=1e-5, window=window_size, negative=5, hs=0, min_count=2,
                              workers=self.cores)
         dm_model = Doc2Vec(dm=1, dm_mean=1, sample=1e-5, window=10, negative=5, hs=0, min_count=2,
                            workers=self.cores)
