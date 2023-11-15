@@ -270,8 +270,39 @@ TBD
 |---------------------------|-----------|-----------|-----------|---------|
 |      Macro Avg            |   0.03    |   0.06    |   0.04    |         |
 |   Weighted Avg            |   0.10    |   0.19    |   0.12    |         |
+
 #### WORD2VEC
-TBD
+|                           | Precision | Recall | F1-Score | Support |
+|---------------------------|-----------|--------|----------|---------|
+| Business                  | 0.76      | 0.67   | 0.72     |  1900   |
+| Sci/Tech                  | 0.42      | 0.74   | 0.53     |  1900   |
+| Sports                    | 0.73      | 0.89   | 0.80     |  1900   |
+| World                     | 0.71      | 0.84   | 0.77     |  1900   |
+| alt.atheism               | 0.62      | 0.26   | 0.37     |   319   |
+| comp.graphics             | 0.35      | 0.46   | 0.40     |   389   |
+| comp.os.ms-windows.misc   | 0.68      | 0.52   | 0.59     |   394   |
+| comp.sys.ibm.pc.hardware  | 0.51      | 0.45   | 0.48     |   392   |
+| comp.sys.mac.hardware     | 0.53      | 0.31   | 0.39     |   385   |
+| comp.windows.x            | 0.71      | 0.51   | 0.59     |   395   |
+| misc.forsale              | 0.42      | 0.62   | 0.50     |   390   |
+| rec.autos                 | 0.53      | 0.35   | 0.42     |   396   |
+| rec.motorcycles           | 0.47      | 0.60   | 0.53     |   398   |
+| rec.sport.baseball        | 0.41      | 0.37   | 0.39     |   397   |
+| rec.sport.hockey          | 0.83      | 0.26   | 0.40     |   399   |
+| sci.crypt                 | 0.94      | 0.51   | 0.66     |   396   |
+| sci.electronics           | 0.41      | 0.20   | 0.26     |   393   |
+| sci.med                   | 0.39      | 0.25   | 0.30     |   396   |
+| sci.space                 | 0.77      | 0.35   | 0.48     |   394   |
+| soc.religion.christian    | 0.52      | 0.75   | 0.62     |   398   |
+| talk.politics.guns        | 0.56      | 0.49   | 0.52     |   364   |
+| talk.politics.mideast     | 0.93      | 0.31   | 0.46     |   376   |
+| talk.politics.misc        | 0.80      | 0.15   | 0.25     |   310   |
+| talk.religion.misc        | 0.50      | 0.01   | 0.02     |   251   |
+
+|        Accuracy           |           |           |           |   0.59  |
+|---------------------------|-----------|-----------|-----------|---------|
+|      Macro Avg            |   0.60    |   0.45    |   0.48    |         |
+|   Weighted Avg            |   0.62    |   0.59    |   0.57    |         |
 
 ### BERT Model
 ####  Features from BertTokenizer (since it is a pre-tained model)

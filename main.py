@@ -15,7 +15,7 @@ import tensorflow as tf
 DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
 DATASET = BOTH                          # BOTH, NEWS_AG, or NEWS_20
 FEATURE = Features.WORD2VEC                 # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
-MODELS_TO_TRAIN = [KERAS_MODEL]         # Models to train
+MODELS_TO_TRAIN = [NAIVE_BAYES_MODEL]         # Models to train
 TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
 STEM = True                             # Stem words
 LEMMA = False                           # Lemmatize words
@@ -50,7 +50,7 @@ if __name__ == '__main__':
             KerasModel.plot_training_loss()
 
         elif model == NAIVE_BAYES_MODEL:
-            if FEATURE == Features.DOC2VEC:
+            if FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC:
                 print("Normalize x_train to avoid negative values error in NB")
                 x_train = scaler.fit_transform(dr.x_train)
                 NBModel = NaiveBayesModel(x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         if MODELS_TO_TRAIN[modelIndex] == BERT_MODEL:
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
-            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL and FEATURE == Features.DOC2VEC:
+            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL and (FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC):
                 print("Normalize x_test to avoid negative values error in NB")
                 x_test = scaler.transform(dr.x_test)
                 evaluate = Evaluate(thisModel, x_test, dr.y_test)
