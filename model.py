@@ -33,9 +33,16 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 class AbstractModel:
-    def __init__(self, x_train, y_train):
+    def __init__(self, x_train, y_train, dataset):
         self.x_train = x_train
         self.y_train = y_train
+        self.dataset = dataset
+        if self.dataset == NEWS_20:
+            self.num_classes = 20
+        elif self.dataset == NEWS_AG:
+            self.num_classes = 4
+        else:
+            self.num_classes = 24
 
     def fine_tune_model(self, model, params, k_fold_splits=5):
         grid_search = GridSearchCV(estimator=model, param_grid=params, cv=k_fold_splits, n_jobs=-1, verbose=2)
@@ -46,7 +53,7 @@ class AbstractModel:
 
 class KerasFCNNModel(AbstractModel):
     def __init__(self, x_train, y_train, dataset=Datasets.BOTH, use_grid_search=False):
-        super().__init__(x_train, y_train)
+        super().__init__(x_train, y_train, dataset)
         self.history = None
         self.dataset = dataset
         self.use_grid_search = use_grid_search
@@ -59,13 +66,7 @@ class KerasFCNNModel(AbstractModel):
         model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
         model.add(tf.keras.layers.Dropout(0.5))
         model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
-        if self.dataset == NEWS_20:
-            num_classes = 20
-        elif self.dataset == NEWS_AG:
-            num_classes = 4
-        else:
-            num_classes = 24
-        model.add(tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax))
+        model.add(tf.keras.layers.Dense(self.num_classes, activation=tf.nn.softmax))
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
@@ -121,13 +122,13 @@ class KerasFCNNModel(AbstractModel):
 
 
 class NaiveBayesModel(AbstractModel):
-    def __init__(self, x_train, y_train, use_grid_search=False):
-        super().__init__(x_train, y_train)
+    def __init__(self, x_train, y_train, dataset=Datasets.BOTH, use_grid_search=False):
+        super().__init__(x_train, y_train, dataset)
         self.use_grid_search = use_grid_search
 
     def learn(self):
         print('Training Naive Bayes model...')
-        model = MultinomialNB()
+        model = MultinomialNB(alpha=0.1)
 
         if self.use_grid_search:
             params = {'alpha': [0.00001, 0.0001, 0.001, 0.1, 1, 10, 100, 1000]}
@@ -141,33 +142,28 @@ class NaiveBayesModel(AbstractModel):
 
 
 class RIPPERModel(AbstractModel):
-    def __init__(self, x_train, y_train):
-        super().__init__(x_train, y_train)
+    def __init__(self, x_train, y_train, dataset=Datasets.BOTH):
+        super().__init__(x_train, y_train, dataset)
 
     def learn(self):
-        print('Training Ripple model...')
+        print('Training RIPPER model...')
         model = lw.RIPPER()
-        model.fit(self.x_train, self.y_train, class_feat='Poisonous/Edible', pos_class='p')
-        print('Ripple model trained')
+
+        model.fit(self.x_train, self.y_train, class_feat=0, pos_class=1)
+        print('RIPPER model trained')
 
         return model
 
 
 class BERTModel(AbstractModel):
     def __init__(self, dataset, x_train, y_train):
-        super().__init__(x_train, y_train)
-        if dataset == NEWS_20:
-            self.numClasses = 20
-        elif dataset == NEWS_AG:
-            self.numClasses = 4
-        else:
-            self.numClasses = 20 + 4
+        super().__init__(x_train, y_train, dataset)
 
     def use_pretrained_bert(self):
         print('Training BERT model...')
         model_name = 'bert-base-uncased'
         tokenizer = BertTokenizer.from_pretrained(model_name)
-        model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.numClasses)
+        model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.num_classes)
 
         inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=128)
         labels = torch.tensor(self.y_train, dtype=torch.int64)

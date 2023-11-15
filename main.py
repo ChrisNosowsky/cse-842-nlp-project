@@ -5,6 +5,8 @@
 # Authors: Yue Deng, Josh Erno, Christopher Nosowsky
 #
 # ==============================================================================
+from sklearn.preprocessing import MinMaxScaler
+
 from model import *
 from evaluate import *
 import tensorflow as tf
@@ -12,15 +14,16 @@ import tensorflow as tf
 # ==== SETUP PARAMS HERE ====
 DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
 DATASET = BOTH                          # BOTH, NEWS_AG, or 20_NEWS
-FEATURE = Features.BOW                  # BOW, NGRAMS, TFIDF, or DOC2VEC
-MODELS_TO_TRAIN = [KERAS_MODEL]         # Models to train
+FEATURE = Features.BOW              # BOW, NGRAMS, TFIDF, or DOC2VEC
+MODELS_TO_TRAIN = [BERT_MODEL]         # Models to train
 TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
 STEM = True                             # Stem words
 LEMMA = False                           # Lemmatize words
-USE_GRID_SEARCH = True                  # Use GridSearchCV
+USE_GRID_SEARCH = False                  # Use GridSearchCV
 TEST_SIZE = DEFAULT_TEST_SIZE           # Either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
-
+# TODO: Fix memoryerror on grid search
+# TODO: Fix low accuracy on Doc2Vec + TFIDF features
 
 if __name__ == '__main__':
     # Check GPU is available
@@ -37,6 +40,7 @@ if __name__ == '__main__':
 
     # Step 2: Model(s)
     models = []
+    scaler = MinMaxScaler()
     for model in MODELS_TO_TRAIN:
         if model == KERAS_MODEL:
             KerasModel = KerasFCNNModel(dr.x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
@@ -46,12 +50,17 @@ if __name__ == '__main__':
             KerasModel.plot_training_loss()
 
         elif model == NAIVE_BAYES_MODEL:
-            NBModel = NaiveBayesModel(dr.x_train, dr.y_train, use_grid_search=USE_GRID_SEARCH)
+            if FEATURE == Features.DOC2VEC:
+                print("Normalize x_train to avoid negative values error in NB")
+                x_train = scaler.fit_transform(dr.x_train)
+                NBModel = NaiveBayesModel(x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
+            else:
+                NBModel = NaiveBayesModel(dr.x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
             naiveBayesModel = NBModel.learn()
             models.append(naiveBayesModel)
 
         elif model == RIPPER_MODEL:
-            RippleModel = RIPPERModel(dr.x_train, dr.y_train)
+            RippleModel = RIPPERModel(dr.x_train, dr.y_train, dataset=DATASET)
             rippleModel = RippleModel.learn()
             models.append(rippleModel)
 
@@ -65,7 +74,12 @@ if __name__ == '__main__':
         if MODELS_TO_TRAIN[modelIndex] == BERT_MODEL:
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
-            evaluate = Evaluate(thisModel, dr.x_test, dr.y_test)
+            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL and FEATURE == Features.DOC2VEC:
+                print("Normalize x_test to avoid negative values error in NB")
+                x_test = scaler.transform(dr.x_test)
+                evaluate = Evaluate(thisModel, x_test, dr.y_test)
+            else:
+                evaluate = Evaluate(thisModel, dr.x_test, dr.y_test)
 
         preds = evaluate.predict(MODELS_TO_TRAIN[modelIndex])
         evaluate.evaluate(preds)
