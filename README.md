@@ -92,6 +92,7 @@ You can also run it in an IDE of your choosing.
 
 #### NGRAMS
 TBD
+
 #### DOC2VEC
 |                           | Precision | Recall | F1-Score | Support |
 |---------------------------|-----------|--------|----------|---------|
@@ -124,8 +125,39 @@ TBD
 |---------------------------|-----------|-----------|-----------|---------|
 |      Macro Avg            |   0.03    |   0.08    |   0.04    |         |
 |   Weighted Avg            |   0.05    |   0.16    |   0.08    |         |
+
 #### WORD2VEC
-TBD
+|                           | Precision | Recall | F1-Score | Support |
+|---------------------------|-----------|--------|----------|---------|
+| Business                  |   0.80    |  0.69  |   0.74   |  1900   |
+| Sci/Tech                  |   0.78    |  0.70  |   0.74   |  1900   |
+| Sports                    |   0.73    |  0.93  |   0.82   |  1900   |
+| World                     |   0.83    |  0.75  |   0.79   |  1900   |
+| alt.atheism               |   0.35    |  0.13  |   0.19   |   319   |
+| comp.graphics             |   0.33    |  0.43  |   0.37   |   389   |
+| comp.os.ms-windows.misc   |   0.55    |  0.18  |   0.27   |   394   |
+| comp.sys.ibm.pc.hardware  |   0.27    |  0.40  |   0.32   |   392   |
+| comp.sys.mac.hardware     |   0.27    |  0.48  |   0.35   |   385   |
+| comp.windows.x            |   0.75    |  0.45  |   0.56   |   395   |
+| misc.forsale              |   0.59    |  0.55  |   0.57   |   390   |
+| rec.autos                 |   0.69    |  0.23  |   0.35   |   396   |
+| rec.motorcycles           |   0.46    |  0.78  |   0.58   |   398   |
+| rec.sport.baseball        |   0.57    |  0.43  |   0.49   |   397   |
+| rec.sport.hockey          |   0.62    |  0.73  |   0.67   |   399   |
+| sci.crypt                 |   0.81    |  0.82  |   0.82   |   396   |
+| sci.electronics           |   0.45    |  0.29  |   0.36   |   393   |
+| sci.med                   |   0.39    |  0.71  |   0.51   |   396   |
+| sci.space                 |   0.74    |  0.49  |   0.59   |   394   |
+| soc.religion.christian    |   0.41    |  0.93  |   0.57   |   398   |
+| talk.politics.guns        |   0.52    |  0.68  |   0.59   |   364   |
+| talk.politics.mideast     |   0.68    |  0.70  |   0.69   |   376   |
+| talk.politics.misc        |   0.36    |  0.09  |   0.14   |   310   |
+| talk.religion.misc        |   0.05    |  0.00  |   0.01   |   251   |
+
+|        Accuracy           |           |           |           |  0.63   |
+|---------------------------|-----------|-----------|-----------|---------|
+|      Macro Avg            |   0.54    |   0.52    |   0.50    |         |
+|   Weighted Avg            |   0.65    |   0.63    |   0.62    |         |
 
 ### RIPPER Model
 #### BOW
@@ -242,16 +274,7 @@ TBD
 TBD
 
 ### BERT Model
-#### BOW
-TBD
-#### TFIDF
-TBD
-#### NGRAMS
-TBD
-#### DOC2VEC
-TBD
-#### WORD2VEC
-TBD
+####  Features from BertTokenizer (since it is a pre-tained model)
 
 ## Result Notes (Dev Notes -- Add here)
 Stemmers improved model

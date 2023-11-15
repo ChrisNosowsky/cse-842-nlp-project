@@ -38,7 +38,7 @@ class Evaluate:
             tokenizer = BertTokenizer.from_pretrained(model_name)
             model = self.model
 
-            inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length=128)
+            inputs = tokenizer(self.x_test, padding=True, truncation=True, return_tensors="pt", max_length=64)
             with torch.no_grad():
                 outputs = model(**inputs)
                 logits = outputs.logits

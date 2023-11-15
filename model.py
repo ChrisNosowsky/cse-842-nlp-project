@@ -166,7 +166,7 @@ class BERTModel(AbstractModel):
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.num_classes)
 
-        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=128)
+        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=64)
         labels = torch.tensor(self.y_train, dtype=torch.int64)
 
         print("Input IDs size:", inputs['input_ids'].size())
