@@ -30,11 +30,24 @@ from gensim.models import Word2Vec
 # TODO: Save the DM and DBOW embeddings to speed up runtime after first save
 # TODO: Figure how to load GoogleNews pretrained embeddings for Doc2Vec feature
 ################################################
+FEATURE_MAPPING = {
+    Features.BOW: "BOW",
+    Features.NGRAMS: "NGRAMS",
+    Features.TFIDF: "TFIDF",
+    Features.DOC2VEC: "DOC2VEC",
+    Features.WORD2VEC: "WORD2VEC"
+}
+DATASET_MAPPING = {
+    0: "NEWS_20",
+    1: "NEWS_AG",
+    2: "BOTH"
+}
 
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma=False, test_size=DEFAULT_TEST_SIZE):
+    def __init__(self, feature=Features.BOW, dataset=BOTH, top_vocab_words=False, stem=False, lemma=False,
+                 test_size=DEFAULT_TEST_SIZE):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -46,6 +59,7 @@ class DataReader:
         self.class_mapping = None
         self.original_x_test = None
         self.original_x_train = None
+        self.dataset = dataset
         self.label_encoder = LabelEncoder()
         self.top_vocab_words = top_vocab_words
         self.stem = stem
@@ -54,6 +68,14 @@ class DataReader:
         self.cores = multiprocessing.cpu_count()
         self.nltk_download_check()
         self.test_size = test_size
+        self.feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
+        self.dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
+        self.saved_train_data_file = (PREPROCESS_DIR + '/train_data_' +
+                                      self.feature_name + '_' + self.dataset_name + '.npz')
+        self.saved_original_data_file = (PREPROCESS_DIR + '/original_data_' +
+                                         self.feature_name + '_' + self.dataset_name + '.npz')
+        self.saved_test_data_file = (PREPROCESS_DIR + '/test_data_' +
+                                     self.feature_name + '_' + self.dataset_name + '.npz')
 
     @staticmethod
     def nltk_download_check():
@@ -102,6 +124,43 @@ class DataReader:
         """
         return re.sub("[^a-zA-Z]", " ", text)
 
+    def check_if_saved(self):
+        if (not os.path.exists(PREPROCESS_DIR)
+                or not os.path.exists(self.saved_train_data_file)
+                or not os.path.exists(self.saved_test_data_file)):
+            return False
+        return True
+
+    def load_features_labels_vocab(self):
+        loaded_train_data = np.load(self.saved_train_data_file)
+        loaded_original_data = np.load(self.saved_original_data_file)
+        loaded_test_data = np.load(self.saved_test_data_file)
+        self.x_train = loaded_train_data['x']
+        self.y_train = loaded_train_data['y']
+        self.original_x_train = loaded_original_data['original_x_train']
+        self.original_x_test = loaded_original_data['original_x_test']
+        self.x_test = loaded_test_data['x']
+        self.y_test = loaded_test_data['y']
+
+    def save_features_labels_vocab(self):
+        if not os.path.exists(PREPROCESS_DIR):
+            # Create the directory if it doesn't exist
+            os.makedirs(PREPROCESS_DIR)
+            print(f"Directory '{PREPROCESS_DIR}' created.")
+
+        print("Saving to npz files")
+        # Save training data to NPZ
+        np.savez(self.saved_train_data_file, x=self.x_train,
+                 y=self.y_train)
+
+        # Save original x training + test data to NPZ
+        np.savez(self.saved_test_data_file, original_x_train=self.original_x_train,
+                 original_x_test=self.original_x_test)
+
+        # Save testing data to NPZ
+        np.savez(self.saved_test_data_file, x=self.x_test,
+                 y=self.y_test)
+
     @staticmethod
     def convert_file_dir_to_csv():
         # code used to combine data from folders and save
@@ -127,14 +186,13 @@ class DataReader:
         test_df.to_csv(NEWS_20_PATH_TEST)
         train_df.to_csv(NEWS_20_PATH_TRAIN)
 
-    def open_dataset(self, dataset=BOTH, debug=False):
+    def open_dataset(self, debug=False):
         """
         Opens the dataset of choosing.
         Options:
             NEWS_20   - 20newsgroup
             NEWS_AG   - ag news
             BOTH - combine both datasets
-        :param dataset: Enum value of the dataset(s) of choosing
         :param debug: Boolean value of whether to run in debug mode
         """
         data_test_20 = None
@@ -148,7 +206,7 @@ class DataReader:
             top_rows = None
 
         # 20newsgroup
-        if dataset == NEWS_20 or dataset == BOTH:
+        if self.dataset == NEWS_20 or self.dataset == BOTH:
             data_train_20 = np.array(pd.read_csv(NEWS_20_PATH_TRAIN, nrows=top_rows))[:, 1:]
             data_test_20 = np.array(pd.read_csv(NEWS_20_PATH_TEST, nrows=top_rows))[:, 1:]
 
@@ -157,7 +215,7 @@ class DataReader:
             data_train_20[:, 0] = self.preprocess(data_train_20)
             print("done pre-processing")
 
-            if dataset == NEWS_20:
+            if self.dataset == NEWS_20:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
@@ -168,7 +226,7 @@ class DataReader:
                 self.data_train = data_train_20
 
         # ag news
-        if dataset == NEWS_AG or dataset == BOTH:
+        if self.dataset == NEWS_AG or self.dataset == BOTH:
             data_train_ag = pd.read_csv(AG_NEWS_PATH_TRAIN)
             data_test_ag = pd.read_csv(AG_NEWS_PATH_TEST)
 
@@ -193,7 +251,7 @@ class DataReader:
             data_test_ag[:, 0] = self.preprocess(data_test_ag)
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
             print('done pre-processing')
-            if dataset == NEWS_AG:
+            if self.dataset == NEWS_AG:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_ag = np.concatenate((data_train_ag, data_test_ag), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_ag[:, 0], data_combine_ag[:, 1],
@@ -204,7 +262,7 @@ class DataReader:
                 self.data_train = data_train_ag
 
         # combine datasets
-        if dataset == BOTH:
+        if self.dataset == BOTH:
             data_test_both = np.concatenate((data_test_20, data_test_ag), axis=0)
             data_train_both = np.concatenate((data_train_20, data_train_ag), axis=0)
             if self.test_size != DEFAULT_TEST_SIZE:
@@ -223,10 +281,10 @@ class DataReader:
         np.random.shuffle(self.data_test)
         np.random.shuffle(self.data_train)
 
-        self.x_train = self.data_train[:, 0]                        # Select column 0 (tokenized articles) in matrix
+        self.x_train = self.data_train[:, 0]  # Select column 0 (tokenized articles) in matrix
         self.original_x_train = self.data_train[:, 0]
-        y_train_words = self.data_train[:, 1]                       # Select column 1 (target labels) in matrix
-        self.y_train = self.label_encoder.fit_transform(y_train_words)   # Convert labels to encoded numeric format
+        y_train_words = self.data_train[:, 1]  # Select column 1 (target labels) in matrix
+        self.y_train = self.label_encoder.fit_transform(y_train_words)  # Convert labels to encoded numeric format
 
         self.x_test = self.data_test[:, 0]
         self.original_x_test = self.data_test[:, 0]
@@ -239,7 +297,7 @@ class DataReader:
         processed_data = []
         for i in range(data.shape[0]):
             # break text into list of words
-            tokens = nltk.word_tokenize(data[i][0])
+            tokens = nltk.word_tokenize(data[i][0], preserve_line=True)
 
             stopwords = nltk.corpus.stopwords.words("english")
             filtered_tokens = []
@@ -261,8 +319,11 @@ class DataReader:
                     token = self.stem_text(token)
                 # remove whitespace and drop empty elements
                 token = token.strip()
-                filtered_tokens.append(token)
-
+                # split to accommodate of special cases not handled by nltk
+                token = token.split()
+                for t in token:
+                    if len(t) > MIN_CHARS_TO_REMOVE_FROM_TOKENS:
+                        filtered_tokens.append(t)
             text = ' '.join(filtered_tokens)
             processed_data.append(text)
         processed_data = np.array(processed_data)
@@ -272,12 +333,12 @@ class DataReader:
     def build_vocab(self):
         text = []
         for row, words in enumerate(self.data_train[:, 0]):
-            text += self.data_train[row][0].split(' ') + self.data_train[row][0].split(' ')
-        if self.top_vocab_words:    # Limit vocab
+            text += self.data_train[row][0].split(' ')
+        if self.top_vocab_words:  # Limit vocab
             word_counts = Counter(text)
             most_common_words = [word for word, _ in word_counts.most_common(TOP_VOCAB_WORDS)]
             self.vocab = np.array(most_common_words)
-        else:                       # No limit vocab
+        else:  # No limit vocab
             text = set(text)
             vectorizer = CountVectorizer()
             vectorizer.fit_transform(text)
@@ -289,7 +350,7 @@ class DataReader:
             self.x_train, self.x_test = self.generate_bow_feature()
         if self.feature == Features.NGRAMS:
             print("Creating NGRAMS Feature")
-            self.x_train, self.x_test = self.generate_ngrams_feature()
+            self.x_train, self.x_test = self.generate_ngrams_feature(NGRAMS_SIZE)
         if self.feature == Features.TFIDF:
             print("Creating TFIDF Feature")
             self.x_train, self.x_test = self.generate_tfidf_feature()
@@ -343,7 +404,7 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_ngrams_feature(self, n=2):
-        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n,n))
+        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n, n))
         x_train = ngrams_vectorizer.fit_transform(self.x_train)
         x_test = ngrams_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()

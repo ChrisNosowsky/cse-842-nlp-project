@@ -20,6 +20,7 @@ You can also run it in an IDE of your choosing.
 ----------------------
 ## Results - November
 - Dataset: AG_NEWS + 20_NEWS
+- Vocab Size: 15,000
 - Stemmers: Yes
 - Lemmers: No
 
@@ -90,8 +91,38 @@ You can also run it in an IDE of your choosing.
 |      Macro Avg            |   0.06    |   0.07    |   0.05    |         |
 |   Weighted Avg            |   0.12    |   0.14    |   0.10    |         |
 
-#### NGRAMS
-TBD
+#### NGRAMS (UniGram)
+|                           | Precision | Recall | F1-Score | Support |
+|---------------------------|-----------|--------|----------|---------|
+| Business                  |   0.84    |  0.77  |   0.80   |  1900   |
+| Sci/Tech                  |   0.75    |  0.88  |   0.81   |  1900   |
+| Sports                    |   0.93    |  0.93  |   0.93   |  1900   |
+| World                     |   0.89    |  0.82  |   0.85   |  1900   |
+| alt.atheism               |   0.82    |  0.61  |   0.70   |   319   |
+| comp.graphics             |   0.48    |  0.77  |   0.59   |   389   |
+| comp.os.ms-windows.misc   |   0.65    |  0.66  |   0.66   |   394   |
+| comp.sys.ibm.pc.hardware  |   0.50    |  0.76  |   0.60   |   392   |
+| comp.sys.mac.hardware     |   0.69    |  0.80  |   0.74   |   385   |
+| comp.windows.x            |   0.95    |  0.49  |   0.65   |   395   |
+| misc.forsale              |   0.78    |  0.73  |   0.75   |   390   |
+| rec.autos                 |   0.85    |  0.73  |   0.79   |   396   |
+| rec.motorcycles           |   0.93    |  0.85  |   0.89   |   398   |
+| rec.sport.baseball        |   0.82    |  0.92  |   0.86   |   397   |
+| rec.sport.hockey          |   0.92    |  0.93  |   0.93   |   399   |
+| sci.crypt                 |   0.93    |  0.84  |   0.88   |   396   |
+| sci.electronics           |   0.66    |  0.54  |   0.59   |   393   |
+| sci.med                   |   0.77    |  0.75  |   0.76   |   396   |
+| sci.space                 |   0.90    |  0.82  |   0.86   |   394   |
+| soc.religion.christian    |   0.80    |  0.83  |   0.82   |   398   |
+| talk.politics.guns        |   0.70    |  0.84  |   0.76   |   364   |
+| talk.politics.mideast     |   0.97    |  0.77  |   0.86   |   376   |
+| talk.politics.misc        |   0.82    |  0.48  |   0.61   |   310   |
+| talk.religion.misc        |   0.44    |  0.57  |   0.50   |   251   |
+
+|        Accuracy           |           |           |           |  0.80   |
+|---------------------------|-----------|-----------|-----------|---------|
+|      Macro Avg            |   0.78    |   0.75    |   0.76    |         |
+|   Weighted Avg            |   0.81    |   0.80    |   0.80    |         |
 
 #### DOC2VEC
 |                           | Precision | Recall | F1-Score | Support |
@@ -159,17 +190,6 @@ TBD
 |      Macro Avg            |   0.54    |   0.52    |   0.50    |         |
 |   Weighted Avg            |   0.65    |   0.63    |   0.62    |         |
 
-### RIPPER Model
-#### BOW
-TBD
-#### TFIDF
-TBD
-#### NGRAMS
-TBD
-#### DOC2VEC
-TBD
-#### WORD2VEC
-TBD
 
 ### Naive Bayes Model
 #### BOW
@@ -236,8 +256,39 @@ TBD
 |---------------------------|-----------|-----------|-----------|---------|
 |      Macro Avg            |   0.09    |   0.09    |   0.08    |         |
 |   Weighted Avg            |   0.17    |   0.10    |   0.11    |         |
-#### NGRAMS
-TBD
+#### NGRAMS (UniGram)
+|                           | Precision | Recall | F1-Score | Support |
+|---------------------------|-----------|--------|----------|---------|
+| Business                  |   0.84    |  0.80  |   0.82   |  1900   |
+| Sci/Tech                  |   0.83    |  0.76  |   0.79   |  1900   |
+| Sports                    |   0.94    |  0.93  |   0.93   |  1900   |
+| World                     |   0.89    |  0.86  |   0.87   |  1900   |
+| alt.atheism               |   0.77    |  0.81  |   0.79   |   319   |
+| comp.graphics             |   0.53    |  0.78  |   0.63   |   389   |
+| comp.os.ms-windows.misc   |   0.33    |  0.01  |   0.01   |   394   |
+| comp.sys.ibm.pc.hardware  |   0.52    |  0.74  |   0.61   |   392   |
+| comp.sys.mac.hardware     |   0.69    |  0.83  |   0.75   |   385   |
+| comp.windows.x            |   0.81    |  0.70  |   0.75   |   395   |
+| misc.forsale              |   0.71    |  0.83  |   0.77   |   390   |
+| rec.autos                 |   0.82    |  0.87  |   0.85   |   396   |
+| rec.motorcycles           |   0.84    |  0.95  |   0.89   |   398   |
+| rec.sport.baseball        |   0.87    |  0.93  |   0.90   |   397   |
+| rec.sport.hockey          |   0.93    |  0.97  |   0.95   |   399   |
+| sci.crypt                 |   0.88    |  0.91  |   0.90   |   396   |
+| sci.electronics           |   0.72    |  0.71  |   0.71   |   393   |
+| sci.med                   |   0.80    |  0.82  |   0.81   |   396   |
+| sci.space                 |   0.74    |  0.89  |   0.81   |   394   |
+| soc.religion.christian    |   0.86    |  0.91  |   0.89   |   398   |
+| talk.politics.guns        |   0.75    |  0.90  |   0.82   |   364   |
+| talk.politics.mideast     |   0.92    |  0.85  |   0.88   |   376   |
+| talk.politics.misc        |   0.61    |  0.62  |   0.61   |   310   |
+| talk.religion.misc        |   0.63    |  0.62  |   0.63   |   251   |
+
+|        Accuracy           |           |           |           |  0.81   |
+|---------------------------|-----------|-----------|-----------|---------|
+|      Macro Avg            |   0.76    |   0.79    |   0.77    |         |
+|   Weighted Avg            |   0.81    |   0.81    |   0.80    |         |
+
 #### DOC2VEC
 |                           | Precision | Recall | F1-Score | Support |
 |---------------------------|-----------|--------|----------|---------|
@@ -311,9 +362,10 @@ TBD
 Stemmers improved model
 
 
-
 ## Disclosures
 Pre-trained GoogleNews vector for word embeddings downloaded from here:
 https://github.com/mmihaltz/word2vec-GoogleNews-vectors
 
 Chris uses an AMD GPU -- had to download tensorflow-directml-plugin for AMD GPU support.
+
+Not pushing to repo the npz compressed files that get saved due to size (200MB each file)

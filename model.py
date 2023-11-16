@@ -7,7 +7,6 @@
 # ==============================================================================
 import torch
 import tensorflow as tf
-import wittgenstein as lw
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import MultinomialNB
@@ -137,20 +136,6 @@ class NaiveBayesModel(AbstractModel):
 
         model.fit(self.x_train, self.y_train)
         print('Naive Bayes model trained')
-
-        return model
-
-
-class RIPPERModel(AbstractModel):
-    def __init__(self, x_train, y_train, dataset=Datasets.BOTH):
-        super().__init__(x_train, y_train, dataset)
-
-    def learn(self):
-        print('Training RIPPER model...')
-        model = lw.RIPPER()
-
-        model.fit(self.x_train, self.y_train, class_feat=0, pos_class=1)
-        print('RIPPER model trained')
 
         return model
 

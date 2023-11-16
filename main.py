@@ -14,16 +14,21 @@ import tensorflow as tf
 # ==== SETUP PARAMS HERE ====
 DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
 DATASET = BOTH                          # BOTH, NEWS_AG, or NEWS_20
-FEATURE = Features.WORD2VEC                 # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
-MODELS_TO_TRAIN = [NAIVE_BAYES_MODEL]         # Models to train
+FEATURE = Features.NGRAMS                 # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
+MODELS_TO_TRAIN = [KERAS_MODEL]         # Models to train
+# === PREPROCESSING SPECIFIC FLAGS === #
 TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
 STEM = True                             # Stem words
 LEMMA = False                           # Lemmatize words
 USE_GRID_SEARCH = False                  # Use GridSearchCV
+# === MISC FLAGS === #
+SAVE_TRAIN_TEST_TO_FILES = True      # Save preprocessed data or no?
+# LOAD_TRAIN_TEST_TO_FILES = False      # Recommend this being True after first preprocessing
 TEST_SIZE = DEFAULT_TEST_SIZE           # Either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
-# TODO: Fix memoryerror on grid search
+# TODO: Fix memoryerror on grid search -- NB
 # TODO: Fix low accuracy on Doc2Vec + TFIDF features
+# TODO: Fix Bi, Tri Grams
 
 if __name__ == '__main__':
     # Check GPU is available
@@ -33,10 +38,22 @@ if __name__ == '__main__':
     sess = tf.compat.v1.Session(config=config)
 
     # Step 1: Data Reader
-    dr = DataReader(FEATURE, top_vocab_words=TOP_VOCAB)
-    dr.open_dataset(dataset=DATASET, debug=DEBUG_MODE)
+    dr = DataReader(FEATURE, dataset=DATASET, top_vocab_words=TOP_VOCAB)
+    print("Begin preprocessing")
+    dr.open_dataset(debug=DEBUG_MODE)
     dr.build_vocab()
+    # if LOAD_TRAIN_TEST_TO_FILES:
+    #     if dr.check_if_saved():             # If you want to load, then check if saved data exists
+    #         dr.load_features_labels_vocab()
+    #     else:
+    #         print("All or some train/test data not saved. Please build features first. Exiting.")
+    #         exit()
+    # else:
     dr.build_feature_set()
+
+    if SAVE_TRAIN_TEST_TO_FILES:
+        print("Electing to save/overwrite data")
+        dr.save_features_labels_vocab()
 
     # Step 2: Model(s)
     models = []
@@ -59,11 +76,6 @@ if __name__ == '__main__':
             naiveBayesModel = NBModel.learn()
             models.append(naiveBayesModel)
 
-        elif model == RIPPER_MODEL:
-            RippleModel = RIPPERModel(dr.x_train, dr.y_train, dataset=DATASET)
-            rippleModel = RippleModel.learn()
-            models.append(rippleModel)
-
         elif model == BERT_MODEL:
             BertModel = BERTModel(DATASET, dr.original_x_train, dr.y_train)
             bertModel = BertModel.use_pretrained_bert()
@@ -74,7 +86,8 @@ if __name__ == '__main__':
         if MODELS_TO_TRAIN[modelIndex] == BERT_MODEL:
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
-            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL and (FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC):
+            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL \
+                    and (FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC):
                 print("Normalize x_test to avoid negative values error in NB")
                 x_test = scaler.transform(dr.x_test)
                 evaluate = Evaluate(thisModel, x_test, dr.y_test)
