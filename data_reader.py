@@ -154,7 +154,7 @@ class DataReader:
                  y=self.y_train)
 
         # Save original x training + test data to NPZ
-        np.savez(self.saved_test_data_file, original_x_train=self.original_x_train,
+        np.savez(self.saved_original_data_file, original_x_train=self.original_x_train,
                  original_x_test=self.original_x_test)
 
         # Save testing data to NPZ
@@ -179,7 +179,6 @@ class DataReader:
                         f = f.read()
                         # append to train/test list
                         test_data.append([f, label_folder]) if i == 0 else train_data.append([f, label_folder])
-                        x = 10
                     print('done', label_folder)
         test_df = pd.DataFrame(test_data)
         train_df = pd.DataFrame(train_data)

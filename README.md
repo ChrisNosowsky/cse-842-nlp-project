@@ -360,7 +360,8 @@ You can also run it in an IDE of your choosing.
 
 ## Result Notes (Dev Notes -- Add here)
 Stemmers improved model
-
+15K vocab limit better than 10K + 5K vocabs for NaiveBayes
+NaiveBayes alpha = 0.1 is the best
 
 ## Disclosures
 Pre-trained GoogleNews vector for word embeddings downloaded from here:
