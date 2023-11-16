@@ -149,7 +149,7 @@ class RIPPERModel(AbstractModel):
         print('Training RIPPER model...')
         model = lw.RIPPER()
 
-        model.fit(self.x_train, self.y_train, class_feat=0, pos_class=1)
+        model.fit(self.x_train, self.y_train, class_feat=0, pos_class=0)
         print('RIPPER model trained')
 
         return model

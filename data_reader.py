@@ -25,6 +25,7 @@ from features import *
 from collections import Counter
 from gensim.models import Word2Vec
 
+
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
 # TODO: Save the DM and DBOW embeddings to speed up runtime after first save
@@ -34,7 +35,8 @@ from gensim.models import Word2Vec
 
 class DataReader:
 
-    def __init__(self, feature=BOW, top_vocab_words=False, stem=False, lemma=False, test_size=DEFAULT_TEST_SIZE):
+    def __init__(self, feature=BOW, dataset=BOTH, top_vocab_words=False, stem=False, lemma=False,
+                 test_size=DEFAULT_TEST_SIZE):
         self.vocab = None
         self.data_train = None
         self.data_test = None
@@ -46,6 +48,7 @@ class DataReader:
         self.class_mapping = None
         self.original_x_test = None
         self.original_x_train = None
+        self.dataset = dataset
         self.label_encoder = LabelEncoder()
         self.top_vocab_words = top_vocab_words
         self.stem = stem
@@ -103,6 +106,42 @@ class DataReader:
         return re.sub("[^a-zA-Z]", " ", text)
 
     @staticmethod
+    def check_if_saved():
+        if not os.path.exists(PREPROCESS_DIR):
+            return False
+        else:
+            return True
+
+    def load_features_labels_vocab(self):
+        feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
+        dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
+        loaded_train_data = np.load(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz')
+        loaded_test_data = np.load(PREPROCESS_DIR + '/test_data_' + feature_name + '_' + dataset_name + '.npz')
+        self.x_train = loaded_train_data['x']
+        self.y_train = loaded_train_data['y']
+        self.x_test = loaded_test_data['x']
+        self.y_test = loaded_test_data['y']
+
+    def save_features_labels_vocab(self):
+        if not os.path.exists(PREPROCESS_DIR):
+            # Create the directory if it doesn't exist
+            os.makedirs(PREPROCESS_DIR)
+            print(f"Directory '{PREPROCESS_DIR}' created.")
+        else:
+            print(f"Directory '{PREPROCESS_DIR}' already exists.")
+
+        print("Saving to npz files")
+        feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
+        dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
+        # Save training data to NPZ
+        np.savez(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz', x=self.x_train,
+                 y=self.y_train)
+
+        # Save testing data to NPZ
+        np.savez(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz', x=self.x_test,
+                 y=self.y_test)
+
+    @staticmethod
     def convert_file_dir_to_csv():
         # code used to combine data from folders and save
         test_data = []
@@ -127,7 +166,7 @@ class DataReader:
         test_df.to_csv(NEWS_20_PATH_TEST)
         train_df.to_csv(NEWS_20_PATH_TRAIN)
 
-    def open_dataset(self, dataset=BOTH, debug=False):
+    def open_dataset(self, debug=False):
         """
         Opens the dataset of choosing.
         Options:
@@ -148,7 +187,7 @@ class DataReader:
             top_rows = None
 
         # 20newsgroup
-        if dataset == NEWS_20 or dataset == BOTH:
+        if self.dataset == NEWS_20 or self.dataset == BOTH:
             data_train_20 = np.array(pd.read_csv(NEWS_20_PATH_TRAIN, nrows=top_rows))[:, 1:]
             data_test_20 = np.array(pd.read_csv(NEWS_20_PATH_TEST, nrows=top_rows))[:, 1:]
 
@@ -157,7 +196,7 @@ class DataReader:
             data_train_20[:, 0] = self.preprocess(data_train_20)
             print("done pre-processing")
 
-            if dataset == NEWS_20:
+            if self.dataset == NEWS_20:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
@@ -168,7 +207,7 @@ class DataReader:
                 self.data_train = data_train_20
 
         # ag news
-        if dataset == NEWS_AG or dataset == BOTH:
+        if self.dataset == NEWS_AG or self.dataset == BOTH:
             data_train_ag = pd.read_csv(AG_NEWS_PATH_TRAIN)
             data_test_ag = pd.read_csv(AG_NEWS_PATH_TEST)
 
@@ -193,7 +232,7 @@ class DataReader:
             data_test_ag[:, 0] = self.preprocess(data_test_ag)
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
             print('done pre-processing')
-            if dataset == NEWS_AG:
+            if self.dataset == NEWS_AG:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_ag = np.concatenate((data_train_ag, data_test_ag), axis=0)
                     X_train, X_test, y_train, y_test = train_test_split(data_combine_ag[:, 0], data_combine_ag[:, 1],
@@ -204,7 +243,7 @@ class DataReader:
                 self.data_train = data_train_ag
 
         # combine datasets
-        if dataset == BOTH:
+        if self.dataset == BOTH:
             data_test_both = np.concatenate((data_test_20, data_test_ag), axis=0)
             data_train_both = np.concatenate((data_train_20, data_train_ag), axis=0)
             if self.test_size != DEFAULT_TEST_SIZE:
@@ -223,10 +262,10 @@ class DataReader:
         np.random.shuffle(self.data_test)
         np.random.shuffle(self.data_train)
 
-        self.x_train = self.data_train[:, 0]                        # Select column 0 (tokenized articles) in matrix
+        self.x_train = self.data_train[:, 0]  # Select column 0 (tokenized articles) in matrix
         self.original_x_train = self.data_train[:, 0]
-        y_train_words = self.data_train[:, 1]                       # Select column 1 (target labels) in matrix
-        self.y_train = self.label_encoder.fit_transform(y_train_words)   # Convert labels to encoded numeric format
+        y_train_words = self.data_train[:, 1]  # Select column 1 (target labels) in matrix
+        self.y_train = self.label_encoder.fit_transform(y_train_words)  # Convert labels to encoded numeric format
 
         self.x_test = self.data_test[:, 0]
         self.original_x_test = self.data_test[:, 0]
@@ -273,11 +312,11 @@ class DataReader:
         text = []
         for row, words in enumerate(self.data_train[:, 0]):
             text += self.data_train[row][0].split(' ') + self.data_train[row][0].split(' ')
-        if self.top_vocab_words:    # Limit vocab
+        if self.top_vocab_words:  # Limit vocab
             word_counts = Counter(text)
             most_common_words = [word for word, _ in word_counts.most_common(TOP_VOCAB_WORDS)]
             self.vocab = np.array(most_common_words)
-        else:                       # No limit vocab
+        else:  # No limit vocab
             text = set(text)
             vectorizer = CountVectorizer()
             vectorizer.fit_transform(text)
@@ -343,7 +382,7 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_ngrams_feature(self, n=2):
-        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n,n))
+        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n, n))
         x_train = ngrams_vectorizer.fit_transform(self.x_train)
         x_test = ngrams_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()

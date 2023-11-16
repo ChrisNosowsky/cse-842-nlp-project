@@ -27,6 +27,7 @@ BERT_MODEL = "BERT Model"
 # FILEPATH CONSTANTS
 NEWS_20_DIR = "data/20newsgroup"
 AG_NEWS_DIR = "data/ag_news"
+PREPROCESS_DIR = "data/preprocess"
 NEWS_20_PATH_TRAIN = NEWS_20_DIR + "/20_news_train.csv"
 NEWS_20_PATH_TEST = NEWS_20_DIR + "/20_news_test.csv"
 AG_NEWS_PATH_TRAIN = AG_NEWS_DIR + "/train.csv"
@@ -41,4 +42,16 @@ AG_NEWS_CLASS_MAPPING = {
     2: 'Sports',
     3: 'Business',
     4: 'Sci/Tech'
+}
+FEATURE_MAPPING = {
+    BOW: "BOW",
+    NGRAMS: "NGRAMS",
+    TFIDF: "TFIDF",
+    DOC2VEC: "DOC2VEC",
+    WORD2VEC: "WORD2VEC"
+}
+DATASET_MAPPING = {
+    NEWS_20: "NEWS_20",
+    NEWS_AG: "NEWS_AG",
+    BOTH: "BOTH"
 }

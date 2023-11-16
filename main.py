@@ -12,17 +12,21 @@ from evaluate import *
 import tensorflow as tf
 
 # ==== SETUP PARAMS HERE ====
-DEBUG_MODE = False                      # DEBUG Mode limits dataset sizes for debug purposes
+DEBUG_MODE = True                      # DEBUG Mode limits dataset sizes for debug purposes
 DATASET = BOTH                          # BOTH, NEWS_AG, or NEWS_20
-FEATURE = Features.WORD2VEC                 # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
+FEATURE = Features.NGRAMS                 # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
 MODELS_TO_TRAIN = [NAIVE_BAYES_MODEL]         # Models to train
+# === PREPROCESSING SPECIFIC FLAGS === #
 TOP_VOCAB = True                        # Limit VOCAB size to top 15000 vocab only
 STEM = True                             # Stem words
 LEMMA = False                           # Lemmatize words
 USE_GRID_SEARCH = False                  # Use GridSearchCV
+# === MISC FLAGS === #
+SAVE_PREPROCESSED_TO_FILES = False      # Save preprocessed data or no?
+LOAD_PREPROCESSED_TO_FILES = False      # Recommend this being True after first preprocessing
 TEST_SIZE = DEFAULT_TEST_SIZE           # Either DEFAULT_TEST_SIZE or value between (0,1)
 # ===========================
-# TODO: Fix memoryerror on grid search
+# TODO: Fix memoryerror on grid search -- NB
 # TODO: Fix low accuracy on Doc2Vec + TFIDF features
 
 if __name__ == '__main__':
@@ -33,10 +37,22 @@ if __name__ == '__main__':
     sess = tf.compat.v1.Session(config=config)
 
     # Step 1: Data Reader
-    dr = DataReader(FEATURE, top_vocab_words=TOP_VOCAB)
-    dr.open_dataset(dataset=DATASET, debug=DEBUG_MODE)
+    dr = DataReader(FEATURE, dataset=DATASET, top_vocab_words=TOP_VOCAB)
+    # if LOAD_PREPROCESSED_TO_FILES:
+    #     if dr.check_if_saved():             # If you want to load, then check if saved data exists
+    #         dr.load_features_labels_vocab()
+    #     else:
+    #         print("All or some preprocessed data not saved. Please preprocess first. Exiting.")
+    #         exit()
+    # else: TODO: add save for original x train, vocab, any other preprocessed data?
+    print("Begin preprocessing")
+    dr.open_dataset(debug=DEBUG_MODE)
     dr.build_vocab()
     dr.build_feature_set()
+
+    if SAVE_PREPROCESSED_TO_FILES:
+        print("Electing to save/overwrite preprocessed data")
+        dr.save_features_labels_vocab()
 
     # Step 2: Model(s)
     models = []
@@ -74,7 +90,8 @@ if __name__ == '__main__':
         if MODELS_TO_TRAIN[modelIndex] == BERT_MODEL:
             evaluate = Evaluate(thisModel, dr.original_x_test.tolist(), dr.y_test)
         else:
-            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL and (FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC):
+            if MODELS_TO_TRAIN[modelIndex] == NAIVE_BAYES_MODEL \
+                    and (FEATURE == Features.DOC2VEC or FEATURE == Features.WORD2VEC):
                 print("Normalize x_test to avoid negative values error in NB")
                 x_test = scaler.transform(dr.x_test)
                 evaluate = Evaluate(thisModel, x_test, dr.y_test)
