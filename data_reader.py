@@ -25,17 +25,28 @@ from features import *
 from collections import Counter
 from gensim.models import Word2Vec
 
-
 ################################################
 # PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
 # TODO: Save the DM and DBOW embeddings to speed up runtime after first save
 # TODO: Figure how to load GoogleNews pretrained embeddings for Doc2Vec feature
 ################################################
+FEATURE_MAPPING = {
+    Features.BOW: "BOW",
+    Features.NGRAMS: "NGRAMS",
+    Features.TFIDF: "TFIDF",
+    Features.DOC2VEC: "DOC2VEC",
+    Features.WORD2VEC: "WORD2VEC"
+}
+DATASET_MAPPING = {
+    0: "NEWS_20",
+    1: "NEWS_AG",
+    2: "BOTH"
+}
 
 
 class DataReader:
 
-    def __init__(self, feature=BOW, dataset=BOTH, top_vocab_words=False, stem=False, lemma=False,
+    def __init__(self, feature=Features.BOW, dataset=BOTH, top_vocab_words=False, stem=False, lemma=False,
                  test_size=DEFAULT_TEST_SIZE):
         self.vocab = None
         self.data_train = None
@@ -57,6 +68,14 @@ class DataReader:
         self.cores = multiprocessing.cpu_count()
         self.nltk_download_check()
         self.test_size = test_size
+        self.feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
+        self.dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
+        self.saved_train_data_file = (PREPROCESS_DIR + '/train_data_' +
+                                      self.feature_name + '_' + self.dataset_name + '.npz')
+        self.saved_original_data_file = (PREPROCESS_DIR + '/original_data_' +
+                                         self.feature_name + '_' + self.dataset_name + '.npz')
+        self.saved_test_data_file = (PREPROCESS_DIR + '/test_data_' +
+                                     self.feature_name + '_' + self.dataset_name + '.npz')
 
     @staticmethod
     def nltk_download_check():
@@ -105,20 +124,21 @@ class DataReader:
         """
         return re.sub("[^a-zA-Z]", " ", text)
 
-    @staticmethod
-    def check_if_saved():
-        if not os.path.exists(PREPROCESS_DIR):
+    def check_if_saved(self):
+        if (not os.path.exists(PREPROCESS_DIR)
+                or not os.path.exists(self.saved_train_data_file)
+                or not os.path.exists(self.saved_test_data_file)):
             return False
-        else:
-            return True
+        return True
 
     def load_features_labels_vocab(self):
-        feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
-        dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
-        loaded_train_data = np.load(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz')
-        loaded_test_data = np.load(PREPROCESS_DIR + '/test_data_' + feature_name + '_' + dataset_name + '.npz')
+        loaded_train_data = np.load(self.saved_train_data_file)
+        loaded_original_data = np.load(self.saved_original_data_file)
+        loaded_test_data = np.load(self.saved_test_data_file)
         self.x_train = loaded_train_data['x']
         self.y_train = loaded_train_data['y']
+        self.original_x_train = loaded_original_data['original_x_train']
+        self.original_x_test = loaded_original_data['original_x_test']
         self.x_test = loaded_test_data['x']
         self.y_test = loaded_test_data['y']
 
@@ -127,18 +147,18 @@ class DataReader:
             # Create the directory if it doesn't exist
             os.makedirs(PREPROCESS_DIR)
             print(f"Directory '{PREPROCESS_DIR}' created.")
-        else:
-            print(f"Directory '{PREPROCESS_DIR}' already exists.")
 
         print("Saving to npz files")
-        feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
-        dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
         # Save training data to NPZ
-        np.savez(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz', x=self.x_train,
+        np.savez(self.saved_train_data_file, x=self.x_train,
                  y=self.y_train)
 
+        # Save original x training + test data to NPZ
+        np.savez(self.saved_test_data_file, original_x_train=self.original_x_train,
+                 original_x_test=self.original_x_test)
+
         # Save testing data to NPZ
-        np.savez(PREPROCESS_DIR + '/train_data_' + feature_name + '_' + dataset_name + '.npz', x=self.x_test,
+        np.savez(self.saved_test_data_file, x=self.x_test,
                  y=self.y_test)
 
     @staticmethod
@@ -173,7 +193,6 @@ class DataReader:
             NEWS_20   - 20newsgroup
             NEWS_AG   - ag news
             BOTH - combine both datasets
-        :param dataset: Enum value of the dataset(s) of choosing
         :param debug: Boolean value of whether to run in debug mode
         """
         data_test_20 = None
@@ -278,7 +297,7 @@ class DataReader:
         processed_data = []
         for i in range(data.shape[0]):
             # break text into list of words
-            tokens = nltk.word_tokenize(data[i][0])
+            tokens = nltk.word_tokenize(data[i][0], preserve_line=True)
 
             stopwords = nltk.corpus.stopwords.words("english")
             filtered_tokens = []
@@ -300,8 +319,11 @@ class DataReader:
                     token = self.stem_text(token)
                 # remove whitespace and drop empty elements
                 token = token.strip()
-                filtered_tokens.append(token)
-
+                # split to accommodate of special cases not handled by nltk
+                token = token.split()
+                for t in token:
+                    if len(t) > MIN_CHARS_TO_REMOVE_FROM_TOKENS:
+                        filtered_tokens.append(t)
             text = ' '.join(filtered_tokens)
             processed_data.append(text)
         processed_data = np.array(processed_data)
@@ -311,7 +333,7 @@ class DataReader:
     def build_vocab(self):
         text = []
         for row, words in enumerate(self.data_train[:, 0]):
-            text += self.data_train[row][0].split(' ') + self.data_train[row][0].split(' ')
+            text += self.data_train[row][0].split(' ')
         if self.top_vocab_words:  # Limit vocab
             word_counts = Counter(text)
             most_common_words = [word for word, _ in word_counts.most_common(TOP_VOCAB_WORDS)]
@@ -328,7 +350,7 @@ class DataReader:
             self.x_train, self.x_test = self.generate_bow_feature()
         if self.feature == Features.NGRAMS:
             print("Creating NGRAMS Feature")
-            self.x_train, self.x_test = self.generate_ngrams_feature()
+            self.x_train, self.x_test = self.generate_ngrams_feature(NGRAMS_SIZE)
         if self.feature == Features.TFIDF:
             print("Creating TFIDF Feature")
             self.x_train, self.x_test = self.generate_tfidf_feature()

@@ -21,7 +21,6 @@ BOTH = 2
 # MODEL CONSTANTS
 KERAS_MODEL = "Keras FCNN Model"
 NAIVE_BAYES_MODEL = "Naive Bayes Model"
-RIPPER_MODEL = "RIPPER Model"
 BERT_MODEL = "BERT Model"
 
 # FILEPATH CONSTANTS
@@ -36,22 +35,12 @@ AG_NEWS_PATH_TEST = AG_NEWS_DIR + "/test.csv"
 # MISC CONSTANTS
 NLTK_CORPUS = ["punkt", "stopwords", "wordnet"]
 DEFAULT_TEST_SIZE = 'default'
+NGRAMS_SIZE = 1
 TOP_VOCAB_WORDS = 15000
+MIN_CHARS_TO_REMOVE_FROM_TOKENS = 1     # e.g. 1 = single words + blanks removed from preprocessed dataset
 AG_NEWS_CLASS_MAPPING = {
     1: 'World',
     2: 'Sports',
     3: 'Business',
     4: 'Sci/Tech'
-}
-FEATURE_MAPPING = {
-    BOW: "BOW",
-    NGRAMS: "NGRAMS",
-    TFIDF: "TFIDF",
-    DOC2VEC: "DOC2VEC",
-    WORD2VEC: "WORD2VEC"
-}
-DATASET_MAPPING = {
-    NEWS_20: "NEWS_20",
-    NEWS_AG: "NEWS_AG",
-    BOTH: "BOTH"
 }
