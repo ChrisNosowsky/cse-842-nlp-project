@@ -6,6 +6,8 @@
 #
 # ==============================================================================
 import torch
+import random
+import seaborn as sns
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
@@ -13,7 +15,7 @@ from sklearn.naive_bayes import MultinomialNB
 from tensorflow import keras
 from data_reader import *
 from datasets import *
-from transformers import BertTokenizer, BertForSequenceClassification, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -21,13 +23,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 ################################################
 # MODELING TO DO LIST AS PROJECT DEVELOPS
 # TODO: Tweak model parameters -- All team
-# TODO: Add Ray Tune or Hyperopt tuning parameters -- Yue
-# TODO: LM? (BERT pretrained models, maybe two? -- One for Yue TODO, One for Chris TODO
-# TODO: Try again at adding GridSearch with Keras? (optional)
-# Chris Notes:
-# Below is originally for Doc2Vec feature.
-#         # clf = LinearSVC(C=0.0025)
-#         # clf.fit(train_vectors, self.y_train)
 ################################################
 
 
@@ -69,19 +64,6 @@ class KerasFCNNModel(AbstractModel):
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-        # if self.use_grid_search:
-        #     params = {
-        #         'optimizer__lr': [0.0001, 0.001, 0.05, 0.1],
-        #         'model__dropout': [0, 0.5],
-        #         'epochs': [5, 10, 20],
-        #         'batch_size': [16, 32, 64]
-        #     }
-        #     model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-        #     model_wrapped = KerasClassifier(model=model, loss="sparse_categorical_crossentropy", optimizer=opt,
-        #                                     metrics=['accuracy'], verbose=0)
-        #     self.fine_tune_model(model_wrapped, params)
-        # else:
-        #     model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
         self.history = model.fit(self.x_train, self.y_train,
                                  epochs=7, batch_size=32)
         model.summary()
@@ -143,48 +125,231 @@ class NaiveBayesModel(AbstractModel):
 class BERTModel(AbstractModel):
     def __init__(self, dataset, x_train, y_train):
         super().__init__(x_train, y_train, dataset)
+        self.num_classes = 0
+        self.batch_size = 32
+        self.num_epochs = 4
+        self.train_split = 0.9
+        self.model_name = 'bert-base-uncased'
+        self.tokenizer = BertTokenizer.from_pretrained(self.model_name)
+        self.training_stats = []
+        self.device = None
+
+    def get_num_classes(self):
+        if self.dataset == NEWS_20:
+            self.num_classes = 20
+        elif self.dataset == NEWS_AG:
+            self.num_classes = 4
+        else:
+            self.num_classes = 24
+
+    def check_cuda_available(self):
+        if torch.cuda.is_available():
+            # Tell PyTorch to use the GPU.
+            self.device = torch.device("cuda")
+            print('There are %d GPU(s) available.' % torch.cuda.device_count())
+            print('We will use the GPU:', torch.cuda.get_device_name(0))
+        else:
+            print('No GPU available, using the CPU instead.')
+            self.device = torch.device("cpu")
+        return self.device
+
+    @staticmethod
+    def set_seed():
+        seed_val = 42
+        random.seed(seed_val)
+        np.random.seed(seed_val)
+        torch.manual_seed(seed_val)
+        torch.cuda.manual_seed_all(seed_val)
+
+    @staticmethod
+    def flat_accuracy(preds, labels):
+        """
+        Calculate the accuracy of our predictions vs labels
+        """
+        pred_flat = np.argmax(preds, axis=1).flatten()
+        labels_flat = labels.flatten()
+        return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
     def use_pretrained_bert(self):
+        device = self.check_cuda_available()
         print('Training BERT model...')
-        model_name = 'bert-base-uncased'
-        print(self.num_classes)
-        tokenizer = BertTokenizer.from_pretrained(model_name)
-        model = BertForSequenceClassification.from_pretrained(model_name, num_labels=self.num_classes)
+        model = BertForSequenceClassification.from_pretrained(self.model_name, num_labels=self.num_classes)
+        model.cuda()
+        model.to(device)
 
-        inputs = tokenizer(self.x_train.tolist(), padding=True, truncation=True, return_tensors="pt", max_length=64)
-        labels = torch.tensor(self.y_train, dtype=torch.int64)
+        inputs = self.tokenizer(self.x_train.tolist(),
+                                padding=True, truncation=True,
+                                return_tensors="pt",
+                                max_length=128)
 
-        print("Input IDs size:", inputs['input_ids'].size())
-        print("Attention Mask size:", inputs['attention_mask'].size())
+        labels = torch.tensor(self.y_train, dtype=torch.int64).to(device)
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+
+        print("Input IDs size:", input_ids.size())
+        print("Attention Mask size:", attention_mask.size())
         print("Labels size:", labels.size())
 
-        dataset = TensorDataset(inputs['input_ids'], inputs['attention_mask'], labels)
+        dataset = TensorDataset(input_ids, attention_mask, labels)
 
-        train_size = int(0.8 * len(dataset))
+        train_size = int(self.train_split * len(dataset))
         val_size = len(dataset) - train_size
+
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-        batch_size = 2
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        # val_loader = DataLoader(val_dataset, batch_size=batch_size)
+        print('{:>5,} training samples'.format(train_size))
+        print('{:>5,} validation samples'.format(val_size))
 
-        optimizer = AdamW(model.parameters(), lr=1e-5)
+        data_loader = DataLoader(
+            train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True
+        )
 
-        num_epochs = 10
-        model.train()
-        for epoch in range(num_epochs):
+        validation_dataloader = DataLoader(
+            val_dataset,
+            batch_size=self.batch_size,
+            shuffle=True
+        )
+
+        # Setup optimizer and learning rate scheduler
+        # Add eps?
+        optimizer = AdamW(
+            model.parameters(),
+            lr=2e-5
+        )
+
+        # Total number of training steps is [number of batches] x [number of epochs]
+        total_steps = len(data_loader) * self.num_epochs
+
+        # Create the learning rate scheduler
+        scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                    num_warmup_steps=0,  # Default value in run_glue.py
+                                                    num_training_steps=total_steps)
+
+        print("Length of the data_loader steps: " + str(len(data_loader)))
+
+        for epoch in range(self.num_epochs):
+            model.train()
+            # Reset the total loss each step to re-calc avg for each epoch
             total_loss = 0
-            for batch in train_loader:
+            for batch in data_loader:
                 optimizer.zero_grad()
-                input_ids, attention_mask, labels = batch
-                outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device)
+                labels = batch[2].to(device)
+                model.zero_grad()
+                outputs = model(input_ids=input_ids,
+                                token_type_ids=None,
+                                attention_mask=attention_mask,
+                                labels=labels)
                 loss = outputs.loss
+                # Perform a backward pass to calculate the gradients
                 loss.backward()
+                # Clip the norm of the gradients to 1.0.
+                # Avoid exploding gradient problem
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                # Network gets told to update the parameters
                 optimizer.step()
+                # Update the learning rate
+                scheduler.step()
                 total_loss += loss.item()
-            average_loss = total_loss / len(train_loader)
-            print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {average_loss:.4f}")
+            # Calculate the average loss over all the batches
+            average_loss = total_loss / len(data_loader)
+            print(f"Epoch {epoch + 1}/{self.num_epochs}, Training Loss: {average_loss:.4f}")
+
+            print("")
+            print("Running Validation...")
+
+            # Put the model in evaluation mode
+            model.eval()
+
+            total_eval_accuracy = 0
+            total_eval_loss = 0
+
+            # Evaluate data for one epoch
+            for batch in validation_dataloader:
+                input_ids = batch[0].to(device)
+                input_mask = batch[1].to(device)
+                labels = batch[2].to(device)
+
+                # Tell pytorch not to bother with constructing the compute graph during
+                # the forward pass, since this is only needed for backprop (training).
+                with torch.no_grad():
+                    # Forward pass, calculate logit predictions.
+                    outputs = model(input_ids,
+                                    token_type_ids=None,
+                                    attention_mask=input_mask,
+                                    labels=labels)
+
+                # Accumulate the validation loss
+                loss = outputs.loss
+                logits = outputs.logits
+
+                total_eval_loss += loss.item()
+
+                # Move logits and labels to CPU
+                logits = logits.detach().cpu().numpy()
+                label_ids = labels.to('cpu').numpy()
+
+                # Calculate the accuracy for this batch of test sentences, and
+                # accumulate it over all batches
+                total_eval_accuracy += self.flat_accuracy(logits, label_ids)
+
+            # Report the final accuracy for this validation run
+            avg_val_accuracy = total_eval_accuracy / len(validation_dataloader)
+            print("  Accuracy: {0:.2f}".format(avg_val_accuracy))
+
+            # Calculate the average loss over all the batches
+            avg_val_loss = total_eval_loss / len(validation_dataloader)
+            print("  Validation Loss: {0:.2f}".format(avg_val_loss))
+
+            self.training_stats.append(
+                {
+                    'Epoch': epoch + 1,
+                    'Training Loss': average_loss,
+                    'Validation Loss': avg_val_loss,
+                    'Validation Accuracy': avg_val_accuracy,
+                }
+            )
 
         print('BERT model trained')
 
         return model
+
+    def table_training_stats(self):
+        # Display floats with two decimal places
+        pd.set_option('display.float_format', '{:.2f}'.format)
+
+        # Create a DataFrame from our training statistics
+        df_stats = pd.DataFrame(data=self.training_stats)
+
+        # Use the 'epoch' as the row index.
+        df_stats = df_stats.set_index('Epoch')
+
+        # Display the table
+        print(df_stats)
+
+        return df_stats
+
+    @staticmethod
+    def plot_training_validation_loss(df_stats):
+        # Use plot styling from seaborn.
+        sns.set(style='darkgrid')
+
+        # Increase the plot size and font size.
+        sns.set(font_scale=1.5)
+        plt.rcParams["figure.figsize"] = (12, 6)
+
+        # Plot the learning curve.
+        plt.plot(df_stats['Training Loss'], 'b-o', label="Training")
+        plt.plot(df_stats['Validation Loss'], 'g-o', label="Validation")
+
+        # Label the plot.
+        plt.title("Training & Validation Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.xticks([1, 2, 3, 4])
+
+        plt.show()

@@ -1,0 +1,24 @@
+AG News Results
+
+
+Keras FCNN
+-BOW-
+-NGRAMS-
+-TFIDF-
+-Word2Vec-
+-Doc2Vec-
+
+
+Naive Bayes
+-BOW-
+-NGRAMS-
+-TFIDF-
+-Word2Vec-
+-Doc2Vec-
+
+BERT
+-BOW-
+-NGRAMS-
+-TFIDF-
+-Word2Vec-
+-Doc2Vec-

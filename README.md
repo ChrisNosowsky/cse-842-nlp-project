@@ -3,7 +3,7 @@
 Program Created By: Yue Deng, Josh Erno, Christopher Nosowsky
 
 
-## How to run program
+## How to run program (Python files)
 Install the libraries:
 ```commandline
 pip install -r requirements.txt
@@ -16,6 +16,17 @@ python main.py
 ```
 
 You can also run it in an IDE of your choosing.
+
+
+## How to run BERT classifier
+Run it in a Jupyter notebook. Open the bert_classifier.ipynb file.
+
+Make sure you have the saved preprocess files in the data/preprocess folder. 
+
+There should be three total files for each dataset you plan to run.
+
+You can also try to run it on your local machine within the main.py (setting the model list to BERT_MODEL), 
+but it may be extremely slow to train.
 
 ----------------------
 ## Results - November
@@ -357,6 +368,37 @@ You can also run it in an IDE of your choosing.
 
 ### BERT Model
 ####  Features from BertTokenizer (since it is a pre-tained model)
+|                          | Precision | Recall | F1-Score | Support |
+|--------------------------|-----------|--------|----------|---------|
+| Business                 | 0.86      | 0.85   | 0.86     | 1900    |
+| Sci/Tech                 | 0.87      | 0.87   | 0.87     | 1900    |
+| Sports                   | 0.96      | 0.98   | 0.97     | 1900    |
+| World                    | 0.92      | 0.90   | 0.91     | 1900    |
+| alt.atheism              | 0.74      | 0.69   | 0.71     | 319     |
+| comp.graphics            | 0.76      | 0.73   | 0.75     | 389     |
+| comp.os.ms-windows.misc  | 0.79      | 0.78   | 0.79     | 394     |
+| comp.sys.ibm.pc.hardware | 0.66      | 0.73   | 0.69     | 392     |
+| comp.sys.mac.hardware    | 0.80      | 0.81   | 0.80     | 385     |
+| comp.windows.x           | 0.85      | 0.77   | 0.81     | 395     |
+| misc.forsale             | 0.86      | 0.84   | 0.85     | 390     |
+| rec.autos                | 0.90      | 0.88   | 0.89     | 396     |
+| rec.motorcycles          | 0.92      | 0.84   | 0.88     | 398     |
+| rec.sport.baseball       | 0.95      | 0.95   | 0.95     | 397     |
+| rec.sport.hockey         | 0.96      | 0.97   | 0.97     | 399     |
+| sci.crypt                | 0.92      | 0.88   | 0.90     | 396     |
+| sci.electronics          | 0.75      | 0.83   | 0.79     | 393     |
+| sci.med                  | 0.96      | 0.94   | 0.95     | 396     |
+| sci.space                | 0.88      | 0.92   | 0.90     | 394     |
+| soc.religion.christian   | 0.92      | 0.90   | 0.91     | 398     |
+| talk.politics.guns       | 0.67      | 0.80   | 0.73     | 364     |
+| talk.politics.mideast    | 0.97      | 0.90   | 0.93     | 376     |
+| talk.politics.misc       | 0.60      | 0.56   | 0.58     | 310     |
+| talk.religion.misc       | 0.61      | 0.69   | 0.65     | 251     |
+
+|        Accuracy           |      |      |      | 0.86 |
+|---------------------------|------|------|------|------|
+|      Macro Avg            | 0.84 | 0.83 | 0.83 |      |
+|   Weighted Avg            | 0.87 | 0.86 | 0.87 |      |
 
 ## Result Notes (Dev Notes -- Add here)
 Stemmers improved model

@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import nltk
 import multiprocessing
+import joblib
 from random import shuffle
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
@@ -70,12 +71,9 @@ class DataReader:
         self.test_size = test_size
         self.feature_name = FEATURE_MAPPING.get(self.feature, "NONE")
         self.dataset_name = DATASET_MAPPING.get(self.dataset, "NONE")
-        self.saved_train_data_file = (PREPROCESS_DIR + '/train_data_' +
-                                      self.feature_name + '_' + self.dataset_name + '.npz')
-        self.saved_original_data_file = (PREPROCESS_DIR + '/original_data_' +
-                                         self.feature_name + '_' + self.dataset_name + '.npz')
-        self.saved_test_data_file = (PREPROCESS_DIR + '/test_data_' +
-                                     self.feature_name + '_' + self.dataset_name + '.npz')
+        self.saved_labels_data_file = (PREPROCESS_DIR + '/labels_data_' + self.dataset_name + '.npz')
+        self.saved_original_data_file = (PREPROCESS_DIR + '/original_data_' + self.dataset_name + '.npz')
+        self.saved_label_encoder_file = (PREPROCESS_DIR + '/label_encoder_' + self.dataset_name + '.joblib')
 
     @staticmethod
     def nltk_download_check():
@@ -124,24 +122,6 @@ class DataReader:
         """
         return re.sub("[^a-zA-Z]", " ", text)
 
-    def check_if_saved(self):
-        if (not os.path.exists(PREPROCESS_DIR)
-                or not os.path.exists(self.saved_train_data_file)
-                or not os.path.exists(self.saved_test_data_file)):
-            return False
-        return True
-
-    def load_features_labels_vocab(self):
-        loaded_train_data = np.load(self.saved_train_data_file)
-        loaded_original_data = np.load(self.saved_original_data_file)
-        loaded_test_data = np.load(self.saved_test_data_file)
-        self.x_train = loaded_train_data['x']
-        self.y_train = loaded_train_data['y']
-        self.original_x_train = loaded_original_data['original_x_train']
-        self.original_x_test = loaded_original_data['original_x_test']
-        self.x_test = loaded_test_data['x']
-        self.y_test = loaded_test_data['y']
-
     def save_features_labels_vocab(self):
         if not os.path.exists(PREPROCESS_DIR):
             # Create the directory if it doesn't exist
@@ -149,17 +129,19 @@ class DataReader:
             print(f"Directory '{PREPROCESS_DIR}' created.")
 
         print("Saving to npz files")
-        # Save training data to NPZ
-        np.savez(self.saved_train_data_file, x=self.x_train,
-                 y=self.y_train)
+        # Save label data to NPZ
+        np.savez(self.saved_labels_data_file,
+                 y_train=self.y_train,
+                 y_test=self.y_test,
+                 allow_pickle=True)
 
         # Save original x training + test data to NPZ
-        np.savez(self.saved_original_data_file, original_x_train=self.original_x_train,
-                 original_x_test=self.original_x_test)
+        np.savez(self.saved_original_data_file,
+                 original_x_train=self.original_x_train,
+                 original_x_test=self.original_x_test,
+                 allow_pickle=True)
 
-        # Save testing data to NPZ
-        np.savez(self.saved_test_data_file, x=self.x_test,
-                 y=self.y_test)
+        joblib.dump(self.label_encoder, self.saved_label_encoder_file)
 
     @staticmethod
     def convert_file_dir_to_csv():
@@ -310,7 +292,7 @@ class DataReader:
                 # remove stopwords
                 if token in stopwords:
                     continue
-                # lemmatization (optional)
+                # lemma (optional)
                 if self.lemma:
                     token = self.lemmatization(token)
                 # remove stems (optional)
