@@ -13,8 +13,8 @@ import tensorflow as tf
 
 # ==== SETUP PARAMS HERE ====
 DEBUG_MODE = False                          # DEBUG Mode limits dataset sizes for debug purposes
-DATASET = NEWS_20                           # BOTH, NEWS_AG, or NEWS_20
-FEATURE = Features.BOW                      # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
+DATASET = BOTH                           # BOTH, NEWS_AG, or NEWS_20
+FEATURE = Features.DOC2VEC                      # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
 MODELS_TO_TRAIN = [KERAS_MODEL]             # KERAS_MODEL, NAIVE_BAYES_MODEL, or BERT_MODEL as options
 # === PREPROCESSING SPECIFIC FLAGS === #
 TOP_VOCAB = True                            # Limit VOCAB size to top 15000 vocab only
@@ -51,7 +51,10 @@ if __name__ == '__main__':
     scaler = MinMaxScaler()
     for model in MODELS_TO_TRAIN:
         if model == KERAS_MODEL:
-            KerasModel = KerasFCNNModel(dr.x_train, dr.y_train, dataset=DATASET, use_grid_search=USE_GRID_SEARCH)
+            KerasModel = KerasFCNNModel(dr.x_train, dr.y_train,
+                                        dataset=DATASET,
+                                        use_grid_search=USE_GRID_SEARCH,
+                                        features=FEATURE)
             kerasFcnnModel = KerasModel.learn()
             models.append(kerasFcnnModel)
             # KerasModel.plot_train_accuracy()

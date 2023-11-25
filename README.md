@@ -136,37 +136,37 @@ but it may be extremely slow to train.
 |   Weighted Avg            |   0.81    |   0.80    |   0.80    |         |
 
 #### DOC2VEC
-|                           | Precision | Recall | F1-Score | Support |
-|---------------------------|-----------|--------|----------|---------|
-| Business                  |   0.00    |  0.00  |   0.00   |  1900   |
-| Sci/Tech                  |   0.12    |  0.24  |   0.16   |  1900   |
-| Sports                    |   0.00    |  0.00  |   0.00   |  1900   |
-| World                     |   0.25    |  0.81  |   0.39   |  1900   |
-| alt.atheism               |   0.00    |  0.00  |   0.00   |   319   |
-| comp.graphics             |   0.00    |  0.00  |   0.00   |   389   |
-| comp.os.ms-windows.misc   |   0.00    |  0.00  |   0.00   |   394   |
-| comp.sys.ibm.pc.hardware  |   0.06    |  0.07  |   0.06   |   392   |
-| comp.sys.mac.hardware     |   0.00    |  0.00  |   0.00   |   385   |
-| comp.windows.x            |   0.07    |  0.64  |   0.13   |   395   |
-| misc.forsale              |   0.07    |  0.15  |   0.09   |   390   |
-| rec.autos                 |   0.00    |  0.00  |   0.00   |   396   |
-| rec.motorcycles           |   0.00    |  0.00  |   0.00   |   398   |
-| rec.sport.baseball        |   0.05    |  0.07  |   0.06   |   397   |
-| rec.sport.hockey          |   0.00    |  0.00  |   0.00   |   399   |
-| sci.crypt                 |   0.00    |  0.00  |   0.00   |   396   |
-| sci.electronics           |   0.00    |  0.00  |   0.00   |   393   |
-| sci.med                   |   0.00    |  0.00  |   0.00   |   396   |
-| sci.space                 |   0.00    |  0.00  |   0.00   |   394   |
-| soc.religion.christian    |   0.00    |  0.00  |   0.00   |   398   |
-| talk.politics.guns        |   0.00    |  0.00  |   0.00   |   364   |
-| talk.politics.mideast     |   0.00    |  0.00  |   0.00   |   376   |
-| talk.politics.misc        |   0.00    |  0.00  |   0.00   |   310   |
-| talk.religion.misc        |   0.00    |  0.00  |   0.00   |   251   |
+|                          | Precision | Recall | F1-Score | Support |
+|--------------------------|-----------|--------|----------|---------|
+| Business                 | 0.54      | 0.44   | 0.48     | 1900    |
+| Sci/Tech                 | 0.33      | 0.70   | 0.45     | 1900    |
+| Sports                   | 0.55      | 0.62   | 0.58     | 1900    |
+| World                    | 0.48      | 0.68   | 0.56     | 1900    |
+| alt.atheism              | 0.43      | 0.50   | 0.46     | 319     |
+| comp.graphics            | 0.54      | 0.31   | 0.39     | 389     |
+| comp.os.ms-windows.misc  | 0.72      | 0.32   | 0.44     | 394     |
+| comp.sys.ibm.pc.hardware | 0.62      | 0.35   | 0.45     | 392     |
+| comp.sys.mac.hardware    | 0.61      | 0.31   | 0.42     | 385     |
+| comp.windows.x           | 0.74      | 0.47   | 0.57     | 395     |
+| misc.forsale             | 0.56      | 0.25   | 0.35     | 390     |
+| rec.autos                | 0.69      | 0.56   | 0.62     | 396     |
+| rec.motorcycles          | 0.75      | 0.53   | 0.62     | 398     |
+| rec.sport.baseball       | 0.92      | 0.46   | 0.62     | 397     |
+| rec.sport.hockey         | 0.91      | 0.67   | 0.77     | 399     |
+| sci.crypt                | 0.85      | 0.54   | 0.66     | 396     |
+| sci.electronics          | 0.60      | 0.34   | 0.44     | 393     |
+| sci.med                  | 0.81      | 0.43   | 0.56     | 396     |
+| sci.space                | 0.83      | 0.38   | 0.53     | 394     |
+| soc.religion.christian   | 0.69      | 0.62   | 0.65     | 398     |
+| talk.politics.guns       | 0.61      | 0.45   | 0.52     | 364     |
+| talk.politics.mideast    | 0.92      | 0.53   | 0.67     | 376     |
+| talk.politics.misc       | 0.45      | 0.24   | 0.31     | 310     |
+| talk.religion.misc       | 0.27      | 0.11   | 0.16     | 251     |
 
-|        Accuracy           |           |           |           |  0.16   |
-|---------------------------|-----------|-----------|-----------|---------|
-|      Macro Avg            |   0.03    |   0.08    |   0.04    |         |
-|   Weighted Avg            |   0.05    |   0.16    |   0.08    |         |
+|        Accuracy           |      |      |      | 0.52 |
+|---------------------------|------|------|------|------|
+|      Macro Avg            | 0.64 | 0.45 | 0.51 |      |
+|   Weighted Avg            | 0.58 | 0.52 | 0.52 |      |
 
 #### WORD2VEC
 |                           | Precision | Recall | F1-Score | Support |

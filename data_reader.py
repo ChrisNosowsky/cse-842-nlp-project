@@ -13,10 +13,9 @@ import pandas as pd
 import nltk
 import multiprocessing
 import joblib
-from random import shuffle
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
-from gensim.test.test_doc2vec import ConcatenatedDoc2Vec
+from nltk.tokenize import word_tokenize
 from nltk import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
@@ -337,23 +336,19 @@ class DataReader:
             self.x_train, self.x_test = self.generate_tfidf_feature()
         if self.feature == Features.DOC2VEC:
             print("Creating Doc2Vec Feature")
-            all_newsgroup_documents = []
-            train_docs = self.convert_newsgroup_to_tagged_docs(self.x_train, 'train')
-            test_docs = self.convert_newsgroup_to_tagged_docs(self.x_test, 'test')
-            all_newsgroup_documents.extend(train_docs)
-            all_newsgroup_documents.extend(test_docs)
-            doc_list = all_newsgroup_documents[:]
-            print('%d docs: %d train, %d test' % (len(doc_list), len(train_docs), len(test_docs)))
-            print("Train Label Size: " + str(len(self.y_train)))
-            self.x_train, self.x_test = self.generate_doc2vec_feature(all_newsgroup_documents,
-                                                                      doc_list, train_docs, test_docs)
+            # train_docs = self.convert_newsgroup_to_tagged_docs(self.x_train, 'train')
+            # test_docs = self.convert_newsgroup_to_tagged_docs(self.x_test, 'test')
+            train_docs = [TaggedDocument(words=word_tokenize(_d.lower()),
+                                         tags=[str(i)]) for i, _d in enumerate(self.x_train)]
+            test_docs = [TaggedDocument(words=word_tokenize(_d.lower()),
+                                        tags=[str(i)]) for i, _d in enumerate(self.x_test)]
+            self.x_train, self.x_test = self.generate_doc2vec_feature(train_docs, test_docs)
         if self.feature == Features.WORD2VEC:
             print("Creating Word2Vec Feature")
             self.x_train, self.x_test = self.generate_word2vec_features()
 
     @staticmethod
     def convert_newsgroup_to_tagged_docs(docs, split):
-        # global doc_count
         tagged_documents = []
 
         for i, v in enumerate(docs):
@@ -361,22 +356,6 @@ class DataReader:
             tagged_documents.append(TaggedDocument(v, [label]))
 
         return tagged_documents
-
-    @staticmethod
-    def extract_vectors(model, docs):
-        vectors_list = []
-        for doc_no in range(len(docs)):
-            doc_label = docs[doc_no].tags[0]
-            doc_vector = model.dv[doc_label]
-            vectors_list.append(doc_vector)
-        return vectors_list
-
-    @staticmethod
-    def get_infer_vectors(model, docs):
-        vecs = []
-        for doc in docs:
-            vecs.append(model.infer_vector(doc.words))
-        return vecs
 
     def generate_bow_feature(self):
         bow_vectorizer = CountVectorizer(vocabulary=self.vocab)
@@ -396,33 +375,33 @@ class DataReader:
         x_test = tfidf_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()
 
-    def generate_doc2vec_feature(self, all_newsgroup_documents, doc_list, train_docs, test_docs, window_size=5):
-        dbow_model = Doc2Vec(dm=0, dm_concat=1, sample=1e-5, window=window_size, negative=5, hs=0, min_count=2,
-                             workers=self.cores)
-        dm_model = Doc2Vec(dm=1, dm_mean=1, sample=1e-5, window=10, negative=5, hs=0, min_count=2,
+    def generate_doc2vec_feature(self, train_docs, test_docs, window_size=5):
+        dm_model = Doc2Vec(vector_size=100,
+                           window=window_size,
+                           alpha=.025,
+                           min_alpha=0.00025,
+                           min_count=2,  # Ignore words with total freq. lower then this
+                           dm=1,  # Training algorithm, using distributed memory
                            workers=self.cores)
-
-        # bow_model.load(self.load_pretrained_word_embeddings())
-        dbow_model.build_vocab(
-            all_newsgroup_documents)
 
         # dm_model.load(self.load_pretrained_word_embeddings())
         dm_model.build_vocab(
-            all_newsgroup_documents)
+            train_docs)
 
-        dbow_dmm_model = ConcatenatedDoc2Vec([dbow_model, dm_model])
-        alpha, min_alpha, passes = (0.025, 0.001, 100)
-        shuffle(doc_list)
-        dbow_model.alpha, dbow_model.min_alpha = alpha, alpha
-        dbow_model.train(doc_list, total_examples=len(doc_list), epochs=passes)
-        dm_model.alpha, dm_model.min_alpha = alpha, alpha
-        dm_model.train(doc_list, total_examples=len(doc_list), epochs=passes)
+        epochs = range(4)
+        for epoch in epochs:
+            print(f'Epoch {epoch + 1}')
+            dm_model.train(train_docs,
+                           total_examples=dm_model.corpus_count,
+                           epochs=dm_model.epochs)
+            # decrease the learning rate
+            dm_model.alpha -= 0.00025
+            # fix the learning rate, no decay
+            dm_model.min_alpha = dm_model.alpha
 
-        dbow_dmm_model.alpha, dbow_dmm_model.min_alpha = alpha, alpha
-        dbow_dmm_model.train(doc_list, total_examples=len(doc_list), epochs=passes)
-
-        train_vectors = self.extract_vectors(dbow_dmm_model, train_docs)
-        test_vectors = self.extract_vectors(dbow_dmm_model, test_docs)
+        train_vectors = [dm_model.docvecs[str(i)] for i in range(len(train_docs))]
+        # infer vector takes text and creates <vector_size> (param above) representation of that text
+        test_vectors = [dm_model.infer_vector(test_docs[i][0]) for i in range(len(test_docs))]
 
         return np.array(train_vectors), np.array(test_vectors)
 

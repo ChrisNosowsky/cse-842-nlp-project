@@ -46,26 +46,38 @@ class AbstractModel:
 
 
 class KerasFCNNModel(AbstractModel):
-    def __init__(self, x_train, y_train, dataset=Datasets.BOTH, use_grid_search=False):
+    def __init__(self, x_train, y_train, dataset=Datasets.BOTH, use_grid_search=False, features=None):
         super().__init__(x_train, y_train, dataset)
         self.history = None
         self.dataset = dataset
         self.use_grid_search = use_grid_search
+        self.features = features
 
     def learn(self):
         in_shape = self.x_train.shape[1]
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
-        model.add(tf.keras.layers.Dropout(0.5))
-        model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
-        model.add(tf.keras.layers.Dropout(0.5))
-        model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
-        model.add(tf.keras.layers.Dense(self.num_classes, activation=tf.nn.softmax))
+        if self.features == Features.DOC2VEC:
+            model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
+            model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
+            model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu))
+            model.add(tf.keras.layers.Dense(self.num_classes, activation=tf.nn.softmax))
+        else:
+            model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
+            model.add(tf.keras.layers.Dropout(0.5))
+            model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
+            model.add(tf.keras.layers.Dropout(0.5))
+            model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
+            model.add(tf.keras.layers.Dense(self.num_classes, activation=tf.nn.softmax))
+
         opt = keras.optimizers.Adam()
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+        if self.features == Features.DOC2VEC:
+            self.history = model.fit(self.x_train, self.y_train,
+                                     epochs=25, batch_size=32)
+        else:
+            self.history = model.fit(self.x_train, self.y_train,
+                                     epochs=7, batch_size=32)
 
-        self.history = model.fit(self.x_train, self.y_train,
-                                 epochs=7, batch_size=32)
         model.summary()
         train_acc = self.history.history['accuracy'][-1]
         train_loss = self.history.history['loss'][-1]
