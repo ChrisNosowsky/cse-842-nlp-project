@@ -376,43 +376,27 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_doc2vec_feature(self, train_docs, test_docs, window_size=5):
-        dm_model = Doc2Vec(vector_size=100,
+        # alpha = .025,
+        # min_alpha = 0.00025,
+        dm_model = Doc2Vec(vector_size=300,
                            window=window_size,
-                           alpha=.025,
-                           min_alpha=0.00025,
                            min_count=2,  # Ignore words with total freq. lower then this
                            dm=1,  # Training algorithm, using distributed memory
-                           workers=self.cores)
+                           workers=self.cores,
+                           epochs=10)
 
-        # dm_model.load(self.load_pretrained_word_embeddings())
         dm_model.build_vocab(
             train_docs)
 
-        epochs = range(4)
-        for epoch in epochs:
-            print(f'Epoch {epoch + 1}')
-            dm_model.train(train_docs,
-                           total_examples=dm_model.corpus_count,
-                           epochs=dm_model.epochs)
-            # decrease the learning rate
-            dm_model.alpha -= 0.00025
-            # fix the learning rate, no decay
-            dm_model.min_alpha = dm_model.alpha
+        dm_model.train(train_docs,
+                       total_examples=dm_model.corpus_count,
+                       epochs=dm_model.epochs)
 
         train_vectors = [dm_model.docvecs[str(i)] for i in range(len(train_docs))]
         # infer vector takes text and creates <vector_size> (param above) representation of that text
         test_vectors = [dm_model.infer_vector(test_docs[i][0]) for i in range(len(test_docs))]
 
         return np.array(train_vectors), np.array(test_vectors)
-
-    # def load_pretrained_word_embeddings(self):
-    #     f_in = gzip.open('GoogleNews-vectors-negative300.bin.gz', 'rb')
-    #     f_out = open('GoogleNews-vectors-negative300.bin', 'wb')
-    #     f_out.writelines(f_in)
-    #
-    #     model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin')
-    #     model.save('GoogleNews-vectors-negative300.bin')
-    #     return model
 
     def generate_word2vec_features(self):
         tokenized_senteces = [sentence.split() for sentence in self.x_train]

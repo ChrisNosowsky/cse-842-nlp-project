@@ -22,6 +22,7 @@ BOTH = 2
 KERAS_MODEL = "Keras FCNN Model"
 NAIVE_BAYES_MODEL = "Naive Bayes Model"
 BERT_MODEL = "BERT Model"
+LOG_REG_MODEL = "Logistic Regression Model"
 
 # FILEPATH CONSTANTS
 NEWS_20_DIR = "data/20newsgroup"

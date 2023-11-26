@@ -12,6 +12,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
 from tensorflow import keras
 from data_reader import *
 from datasets import *
@@ -131,6 +132,18 @@ class NaiveBayesModel(AbstractModel):
         model.fit(self.x_train, self.y_train)
         print('Naive Bayes model trained')
 
+        return model
+
+
+class LogisticRegressionModel(AbstractModel):
+    def __init__(self, x_train, y_train, dataset):
+        super().__init__(x_train, y_train, dataset)
+
+    def learn(self):
+        print('Training Logistic Regression model...')
+        model = LogisticRegression(C=5, multi_class='multinomial', solver='saga', max_iter=1000)
+        model.fit(self.x_train, self.y_train)
+        print('Logistic Regression model trained')
         return model
 
 
