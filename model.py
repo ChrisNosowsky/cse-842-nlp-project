@@ -21,11 +21,6 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-################################################
-# MODELING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Tweak model parameters -- All team
-################################################
-
 
 class AbstractModel:
     def __init__(self, x_train, y_train, dataset):
@@ -57,6 +52,12 @@ class KerasFCNNModel(AbstractModel):
     def learn(self):
         in_shape = self.x_train.shape[1]
         model = tf.keras.Sequential()
+
+        # Fully connected layers, relu to introduce non-linearity
+        # Dropout added for regularization to prevent over fitting/reliance on specific nodes/learn more robust feats.
+        # L2 penalty added to prevent overfitting and penalize large weights
+        # Output layer applies softmax to convert raw output to probabilities,
+        # each node representing probability of the input belonging to a particular class
         if self.features == Features.DOC2VEC:
             model.add(tf.keras.layers.Dense(in_shape, activation=tf.nn.relu, input_shape=(in_shape,)))
             model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
@@ -70,7 +71,10 @@ class KerasFCNNModel(AbstractModel):
             model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(0.1)))
             model.add(tf.keras.layers.Dense(self.num_classes, activation=tf.nn.softmax))
 
+        # Adam adapts the learning rate of each parameter individually based on history of gradients
         opt = keras.optimizers.Adam()
+        # Sparse categorical crossentropy allows us to send raw labels in instead of one hot encoded labels for binary
+        # Also measures the difference between predicted prob. distribution and true probability distribution
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
         if self.features == Features.DOC2VEC:
             self.history = model.fit(self.x_train, self.y_train,
@@ -122,6 +126,7 @@ class NaiveBayesModel(AbstractModel):
 
     def learn(self):
         print('Training Naive Bayes model...')
+        # Alpha = laplace smoothing parameter = Ensure no feature has probability of zero.
         model = MultinomialNB(alpha=0.1)
 
         if self.use_grid_search:
@@ -141,6 +146,7 @@ class LogisticRegressionModel(AbstractModel):
 
     def learn(self):
         print('Training Logistic Regression model...')
+        # C = Regularization strength. Smaller = more regularization/prevent over fitting
         model = LogisticRegression(C=5, multi_class='multinomial', solver='saga', max_iter=1000)
         model.fit(self.x_train, self.y_train)
         print('Logistic Regression model trained')
@@ -196,18 +202,48 @@ class BERTModel(AbstractModel):
         return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
     def use_pretrained_bert(self):
+        """
+            Fine-tune a pre-trained BERT model for sequence classification on the provided training data.
+        Note:
+        - The function loads a pre-trained BERT model for sequence classification
+        with a specified number of output classes.
+        - The model is moved to the GPU if available.
+        - The training data is tokenized using the provided tokenizer,
+        ensuring padding, truncation, and a maximum sequence length of 128.
+        - The input tokens are converted into PyTorch tensors.
+        - The dataset is created using input IDs, attention mask, and labels,
+        and then split into training and validation sets.
+        - Data loaders are created for both training and validation sets, allowing batch processing during training.
+
+        :return: The fine-tuned BERT model
+        """
         device = self.check_cuda_available()
         print('Training BERT model...')
+
+        # Load pre-trained BERT model for sequence classification
         model = BertForSequenceClassification.from_pretrained(self.model_name, num_labels=self.num_classes)
+
+        # Move the model to GPU if available
         model.cuda()
         model.to(device)
 
+        # Tokenize the training data using the specified tokenizer
+        # Padding=true ensures all sequences have same length, adding padding to shorter sequences
+        # Truncation means limit the length of sequences to specified max length
+        # Return_tensors=pt means that PyTorch tensors to be returned
+        # Max_length=128 means all inputs will only have tokenized sequence of size 128 at max
         inputs = self.tokenizer(self.x_train.tolist(),
                                 padding=True, truncation=True,
                                 return_tensors="pt",
                                 max_length=128)
 
+        # Convert labels to PyTorch tensor and move to GPU
         labels = torch.tensor(self.y_train, dtype=torch.int64).to(device)
+
+        # Move input tokens and attention mask to GPU
+        # Input ID's are numbers mapped to each word in tokenized sequence
+        # Attention mask is either 0 or 1, 0 meaning ignore token, 1 meaning attend to that token.
+        # O I assume is MASK token
         input_ids = inputs["input_ids"].to(device)
         attention_mask = inputs["attention_mask"].to(device)
 
@@ -215,6 +251,7 @@ class BERTModel(AbstractModel):
         print("Attention Mask size:", attention_mask.size())
         print("Labels size:", labels.size())
 
+        # Create a PyTorch TensorDataset from input IDs, attention mask, and labels
         dataset = TensorDataset(input_ids, attention_mask, labels)
 
         train_size = int(self.train_split * len(dataset))

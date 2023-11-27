@@ -25,11 +25,6 @@ from features import *
 from collections import Counter
 from gensim.models import Word2Vec
 
-################################################
-# PREPROCESSING TO DO LIST AS PROJECT DEVELOPS
-# TODO: Save the DM and DBOW embeddings to speed up runtime after first save
-# TODO: Figure how to load GoogleNews pretrained embeddings for Doc2Vec feature
-################################################
 FEATURE_MAPPING = {
     Features.BOW: "BOW",
     Features.NGRAMS: "NGRAMS",
@@ -91,7 +86,7 @@ class DataReader:
                 print("The '" + corpus + "' corpus is downloaded.")
 
     @staticmethod
-    def lemmatization(text):
+    def lemma_token(text):
         """
         reduces word to base form
         :param text: String of the document content
@@ -198,10 +193,10 @@ class DataReader:
             if self.dataset == NEWS_20:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_20 = np.concatenate((data_train_20, data_test_20), axis=0)
-                    X_train, X_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
+                    x_train, x_test, y_train, y_test = train_test_split(data_combine_20[:, 0], data_combine_20[:, 1],
                                                                         test_size=self.test_size, random_state=42)
-                    data_train_20 = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
-                    data_test_20 = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
+                    data_train_20 = np.concatenate((x_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                    data_test_20 = np.concatenate((x_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
                 self.data_test = data_test_20
                 self.data_train = data_train_20
 
@@ -225,8 +220,10 @@ class DataReader:
             else:
                 random_indices = np.random.choice(data_train_ag.shape[0], size=12000, replace=False)
                 data_train_ag = data_train_ag[random_indices]
-            for i in range(data_test_ag.shape[0]): data_test_ag[i][1] = str(data_test_ag[i][1])
-            for i in range(data_train_ag.shape[0]): data_train_ag[i][1] = str(data_train_ag[i][1])
+            for i in range(data_test_ag.shape[0]):
+                data_test_ag[i][1] = str(data_test_ag[i][1])
+            for i in range(data_train_ag.shape[0]):
+                data_train_ag[i][1] = str(data_train_ag[i][1])
             print('pre-processing ag news dataset')
             data_test_ag[:, 0] = self.preprocess(data_test_ag)
             data_train_ag[:, 0] = self.preprocess(data_train_ag)
@@ -234,10 +231,11 @@ class DataReader:
             if self.dataset == NEWS_AG:
                 if self.test_size != DEFAULT_TEST_SIZE:
                     data_combine_ag = np.concatenate((data_train_ag, data_test_ag), axis=0)
-                    X_train, X_test, y_train, y_test = train_test_split(data_combine_ag[:, 0], data_combine_ag[:, 1],
+                    x_train, x_test, y_train, y_test = train_test_split(data_combine_ag[:, 0],
+                                                                        data_combine_ag[:, 1],
                                                                         test_size=self.test_size, random_state=42)
-                    data_train_ag = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
-                    data_test_ag = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
+                    data_train_ag = np.concatenate((x_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                    data_test_ag = np.concatenate((x_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
                 self.data_test = data_test_ag
                 self.data_train = data_train_ag
 
@@ -247,10 +245,10 @@ class DataReader:
             data_train_both = np.concatenate((data_train_20, data_train_ag), axis=0)
             if self.test_size != DEFAULT_TEST_SIZE:
                 data_combine_both = np.concatenate((data_train_both, data_test_both), axis=0)
-                X_train, X_test, y_train, y_test = train_test_split(data_combine_both[:, 0], data_combine_both[:, 1],
+                x_train, x_test, y_train, y_test = train_test_split(data_combine_both[:, 0], data_combine_both[:, 1],
                                                                     test_size=self.test_size, random_state=42)
-                data_train_both = np.concatenate((X_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
-                data_test_both = np.concatenate((X_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
+                data_train_both = np.concatenate((x_train.reshape(-1, 1), y_train.reshape(-1, 1)), axis=1)
+                data_test_both = np.concatenate((x_test.reshape(-1, 1), y_test.reshape(-1, 1)), axis=1)
 
             self.data_test = data_test_both
             self.data_train = data_train_both
@@ -293,7 +291,7 @@ class DataReader:
                     continue
                 # lemma (optional)
                 if self.lemma:
-                    token = self.lemmatization(token)
+                    token = self.lemma_token(token)
                 # remove stems (optional)
                 if self.stem:
                     token = self.stem_text(token)
@@ -336,8 +334,6 @@ class DataReader:
             self.x_train, self.x_test = self.generate_tfidf_feature()
         if self.feature == Features.DOC2VEC:
             print("Creating Doc2Vec Feature")
-            # train_docs = self.convert_newsgroup_to_tagged_docs(self.x_train, 'train')
-            # test_docs = self.convert_newsgroup_to_tagged_docs(self.x_test, 'test')
             train_docs = [TaggedDocument(words=word_tokenize(_d.lower()),
                                          tags=[str(i)]) for i, _d in enumerate(self.x_train)]
             test_docs = [TaggedDocument(words=word_tokenize(_d.lower()),
@@ -346,16 +342,6 @@ class DataReader:
         if self.feature == Features.WORD2VEC:
             print("Creating Word2Vec Feature")
             self.x_train, self.x_test = self.generate_word2vec_features()
-
-    @staticmethod
-    def convert_newsgroup_to_tagged_docs(docs, split):
-        tagged_documents = []
-
-        for i, v in enumerate(docs):
-            label = '%s_%s' % (split, i)
-            tagged_documents.append(TaggedDocument(v, [label]))
-
-        return tagged_documents
 
     def generate_bow_feature(self):
         bow_vectorizer = CountVectorizer(vocabulary=self.vocab)
@@ -370,38 +356,76 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_tfidf_feature(self, max_feat=10000):
+        """
+        Generate TF-IDF features for the training and test datasets.
+
+        :param max_feat: Maximum number of features to consider when constructing the TF-IDF matrix.
+        :return: x_train (numpy.ndarray): TF-IDF features for the training dataset.
+                 x_test (numpy.ndarray): TF-IDF features for the test dataset.
+        """
         tfidf_vectorizer = TfidfVectorizer(max_features=max_feat)
         x_train = tfidf_vectorizer.fit_transform(self.x_train)
         x_test = tfidf_vectorizer.fit_transform(self.x_test)
         return x_train.toarray(), x_test.toarray()
 
     def generate_doc2vec_feature(self, train_docs, test_docs, window_size=5):
+        """
+        Generate Doc2Vec embeddings for a set of training and test documents.
+
+        :param train_docs: (list of TaggedDocument): Tagged documents for training the Doc2Vec model.
+        :param test_docs: Test documents for which to generate embeddings.
+        :param window_size: (int, optional): Size of the context window for the Doc2Vec model.
+        :return: train_vectors (numpy.ndarray): Doc2Vec embeddings for the training set.
+                 test_vectors (numpy.ndarray): Doc2Vec embeddings for the test set.
+
+        Note:
+        - The function builds and trains a Doc2Vec model using the distributed memory (dm) approach.
+        - The model is trained on the provided training documents.
+        - Doc2Vec embeddings are generated for both the training and test documents.
+        - The window_size parameter determines the maximum distance between the current and predicted word
+          within a sentence.
+        """
         # alpha = .025,
         # min_alpha = 0.00025,
         dm_model = Doc2Vec(vector_size=300,
                            window=window_size,
-                           min_count=2,  # Ignore words with total freq. lower then this
-                           dm=1,  # Training algorithm, using distributed memory
+                           min_count=2,         # Ignore words with total freq. lower then this
+                           dm=1,                # Training algorithm, using distributed memory
                            workers=self.cores,
                            epochs=10)
 
+        # Build the vocabulary for the Doc2Vec model based on the training documents
         dm_model.build_vocab(
             train_docs)
 
+        # Train the Doc2Vec model on the training documents
         dm_model.train(train_docs,
                        total_examples=dm_model.corpus_count,
                        epochs=dm_model.epochs)
 
+        # Extract Doc2Vec embeddings for the training set
         train_vectors = [dm_model.docvecs[str(i)] for i in range(len(train_docs))]
+
         # infer vector takes text and creates <vector_size> (param above) representation of that text
         test_vectors = [dm_model.infer_vector(test_docs[i][0]) for i in range(len(test_docs))]
 
         return np.array(train_vectors), np.array(test_vectors)
 
     def generate_word2vec_features(self):
+        """
+        Generate Word2Vec embeddings for the training and test datasets.
+
+        :return: x_train_w2v (numpy.ndarray): Word2Vec embeddings for the training dataset.
+                 x_test_w2v (numpy.ndarray): Word2Vec embeddings for the test dataset.
+        """
+
+        # Tokenize the sentences in the training data
         tokenized_senteces = [sentence.split() for sentence in self.x_train]
+
+        # Train a Word2Vec model with specified parameters
         word2vec_model = Word2Vec(sentences=tokenized_senteces, vector_size=300, window=30, min_count=30, workers=4)
 
+        # Define a function to convert a sentence to its Word2Vec representation
         def sentence_to_vector(sentence):
             words = sentence.split()
             vectors = [word2vec_model.wv[word] for word in words if word in word2vec_model.wv]
@@ -409,6 +433,9 @@ class DataReader:
                 return np.zeros(word2vec_model.vector_size)
             return np.mean(vectors, axis=0)
 
+        # Generate Word2Vec embeddings for the training dataset
         x_train_w2v = np.array([sentence_to_vector(sentence) for sentence in self.x_train])
+
+        # Generate Word2Vec embeddings for the test dataset
         x_test_w2v = np.array([sentence_to_vector(sentence) for sentence in self.x_test])
         return x_train_w2v, x_test_w2v
