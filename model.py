@@ -51,6 +51,7 @@ class KerasFCNNModel(AbstractModel):
 
     def learn(self):
         in_shape = self.x_train.shape[1]
+
         model = tf.keras.Sequential()
 
         # Fully connected layers, relu to introduce non-linearity

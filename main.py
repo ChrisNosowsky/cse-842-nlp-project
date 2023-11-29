@@ -12,9 +12,9 @@ import tensorflow as tf
 
 # ==== SETUP PARAMS HERE ====
 DEBUG_MODE = False                          # DEBUG Mode limits dataset sizes for debug purposes
-DATASET = NEWS_AG                           # BOTH, NEWS_AG, or NEWS_20
-FEATURE = Features.DOC2VEC                      # BOW, NGRAMS, TFIDF, WORD2VEC or DOC2VEC
-MODELS_TO_TRAIN = [KERAS_MODEL]           # KERAS_MODEL, NAIVE_BAYES_MODEL, or BERT_MODEL, LOG_REG_MODEL as options
+DATASET = NEWS_20                           # BOTH, NEWS_AG, or NEWS_20
+FEATURE = Features.NGRAMS                      # BOW, NGRAMS, WORD2VEC or DOC2VEC
+MODELS_TO_TRAIN = [NAIVE_BAYES_MODEL]           # KERAS_MODEL, NAIVE_BAYES_MODEL, or BERT_MODEL, LOG_REG_MODEL as options
 # === PREPROCESSING SPECIFIC FLAGS === #
 TOP_VOCAB = True                            # Limit VOCAB size to top 15000 vocab only
 STEM = True                                 # Stem words
@@ -25,8 +25,6 @@ SAVE_TRAIN_TEST_TO_FILES = False            # Save preprocessed data or no?
 TEST_SIZE = DEFAULT_TEST_SIZE               # Either DEFAULT_TEST_SIZE or value between (0,1)
 SEED_NUM = 42
 # ===========================
-# TODO: Fix low accuracy on TFIDF features
-# TODO: Fix Bi, Tri Grams
 
 
 def set_project_seed():

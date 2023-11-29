@@ -14,28 +14,18 @@ Keras FCNN
    macro avg       0.87      0.86      0.86      7600
 weighted avg       0.87      0.86      0.86      7600
 
--NGRAMS-
+-NGRAMS (Tri-Grams)-
               precision    recall  f1-score   support
 
-    Business       0.77      0.87      0.82      1900
-    Sci/Tech       0.81      0.84      0.82      1900
-      Sports       0.95      0.94      0.95      1900
-       World       0.94      0.80      0.87      1900
+    Business       0.81      0.75      0.78      1900
+    Sci/Tech       0.76      0.85      0.80      1900
+      Sports       0.92      0.91      0.91      1900
+       World       0.87      0.84      0.85      1900
 
-    accuracy                           0.86      7600
-   macro avg       0.87      0.86      0.86      7600
-weighted avg       0.87      0.86      0.86      7600
--TFIDF-
-              precision    recall  f1-score   support
+    accuracy                           0.84      7600
+   macro avg       0.84      0.84      0.84      7600
+weighted avg       0.84      0.84      0.84      7600
 
-    Business       0.28      0.42      0.33      1900
-    Sci/Tech       0.28      0.29      0.28      1900
-      Sports       0.29      0.17      0.22      1900
-       World       0.28      0.24      0.26      1900
-
-    accuracy                           0.28      7600
-   macro avg       0.28      0.28      0.27      7600
-weighted avg       0.28      0.28      0.27      7600
 -Word2Vec-
               precision    recall  f1-score   support
 
@@ -71,28 +61,18 @@ Naive Bayes
     accuracy                           0.88      7600
    macro avg       0.88      0.88      0.88      7600
 weighted avg       0.88      0.88      0.88      7600
--NGRAMS-
+
+-NGRAMS (Tri-Grams)-
               precision    recall  f1-score   support
 
-    Business       0.85      0.81      0.83      1900
-    Sci/Tech       0.83      0.85      0.84      1900
-      Sports       0.94      0.96      0.95      1900
-       World       0.89      0.88      0.88      1900
+    Business       0.83      0.74      0.78      1900
+    Sci/Tech       0.76      0.85      0.80      1900
+      Sports       0.93      0.91      0.92      1900
+       World       0.83      0.85      0.84      1900
 
-    accuracy                           0.88      7600
-   macro avg       0.88      0.88      0.88      7600
-weighted avg       0.88      0.88      0.88      7600
--TFIDF-
-              precision    recall  f1-score   support
-
-    Business       0.25      0.15      0.19      1900
-    Sci/Tech       0.28      0.45      0.35      1900
-      Sports       0.30      0.24      0.27      1900
-       World       0.29      0.29      0.29      1900
-
-    accuracy                           0.28      7600
-   macro avg       0.28      0.28      0.27      7600
-weighted avg       0.28      0.28      0.27      7600
+    accuracy                           0.84      7600
+   macro avg       0.84      0.84      0.84      7600
+weighted avg       0.84      0.84      0.84      7600
 
 BERT
               precision    recall  f1-score   support

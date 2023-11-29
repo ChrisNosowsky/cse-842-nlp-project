@@ -9,7 +9,6 @@
 # FEATURE CONSTANTS
 BOW = 0
 NGRAMS = 1
-TFIDF = 2
 DOC2VEC = 3
 WORD2VEC = 4
 
@@ -36,7 +35,7 @@ AG_NEWS_PATH_TEST = AG_NEWS_DIR + "/test.csv"
 # MISC CONSTANTS
 NLTK_CORPUS = ["punkt", "stopwords", "wordnet"]
 DEFAULT_TEST_SIZE = 'default'
-NGRAMS_SIZE = 1
+NGRAMS_SIZE = 2
 TOP_VOCAB_WORDS = 15000
 MIN_CHARS_TO_REMOVE_FROM_TOKENS = 1     # e.g. 1 = single words + blanks removed from preprocessed dataset
 AG_NEWS_CLASS_MAPPING = {

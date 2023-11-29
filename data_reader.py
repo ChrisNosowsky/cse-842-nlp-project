@@ -17,18 +17,18 @@ from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from nltk.tokenize import word_tokenize
 from nltk import PorterStemmer, WordNetLemmatizer
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from constants import *
 from features import *
 from collections import Counter
 from gensim.models import Word2Vec
+from nltk.util import ngrams
 
 FEATURE_MAPPING = {
     Features.BOW: "BOW",
     Features.NGRAMS: "NGRAMS",
-    Features.TFIDF: "TFIDF",
     Features.DOC2VEC: "DOC2VEC",
     Features.WORD2VEC: "WORD2VEC"
 }
@@ -177,6 +177,8 @@ class DataReader:
 
         if debug:
             top_rows = 1000
+        elif self.feature == Features.NGRAMS:
+            top_rows = 15000
         else:
             top_rows = None
 
@@ -329,9 +331,6 @@ class DataReader:
         if self.feature == Features.NGRAMS:
             print("Creating NGRAMS Feature")
             self.x_train, self.x_test = self.generate_ngrams_feature(NGRAMS_SIZE)
-        if self.feature == Features.TFIDF:
-            print("Creating TFIDF Feature")
-            self.x_train, self.x_test = self.generate_tfidf_feature()
         if self.feature == Features.DOC2VEC:
             print("Creating Doc2Vec Feature")
             train_docs = [TaggedDocument(words=word_tokenize(_d.lower()),
@@ -350,22 +349,28 @@ class DataReader:
         return x_train.toarray(), x_test.toarray()
 
     def generate_ngrams_feature(self, n=2):
-        ngrams_vectorizer = CountVectorizer(vocabulary=self.vocab, ngram_range=(n, n))
-        x_train = ngrams_vectorizer.fit_transform(self.x_train)
-        x_test = ngrams_vectorizer.fit_transform(self.x_test)
-        return x_train.toarray(), x_test.toarray()
+        x_train = []
+        x_test = []
 
-    def generate_tfidf_feature(self, max_feat=10000):
-        """
-        Generate TF-IDF features for the training and test datasets.
+        for line in self.x_train:
+            token = word_tokenize(line)
+            bigram = list(ngrams(token, n))
+            x_train.append(bigram)
 
-        :param max_feat: Maximum number of features to consider when constructing the TF-IDF matrix.
-        :return: x_train (numpy.ndarray): TF-IDF features for the training dataset.
-                 x_test (numpy.ndarray): TF-IDF features for the test dataset.
-        """
-        tfidf_vectorizer = TfidfVectorizer(max_features=max_feat)
-        x_train = tfidf_vectorizer.fit_transform(self.x_train)
-        x_test = tfidf_vectorizer.fit_transform(self.x_test)
+        for line in self.x_test:
+            token = word_tokenize(line)
+            bigram = list(ngrams(token, n))
+            x_test.append(bigram)
+
+        # Convert bigrams to text (assuming they are tuples)
+        x_train_text = [' '.join(map(str, bigram)) for bigram in x_train]
+        x_test_text = [' '.join(map(str, bigram)) for bigram in x_test]
+
+        # Use CountVectorizer to convert bigrams to a matrix of token counts
+        vectorizer = CountVectorizer()
+        x_train = vectorizer.fit_transform(x_train_text)
+        x_test = vectorizer.transform(x_test_text)
+
         return x_train.toarray(), x_test.toarray()
 
     def generate_doc2vec_feature(self, train_docs, test_docs, window_size=5):
